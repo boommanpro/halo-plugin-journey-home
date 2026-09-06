@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+
+      - name: Build plugin
+        run: ./gradlew build --no-daemon
+
+      - name: Check build output
+        run: |
+          ls build/libs/
+          test -f build/libs/halo-plugin-journey-home-*.jar
+          unzip -l build/libs/halo-plugin-journey-home-*.jar | grep -q "plugin.yaml"
+          unzip -l build/libs/halo-plugin-journey-home-*.jar | grep -q "console/main.js"
+          unzip -l build/libs/halo-plugin-journey-home-*.jar | grep -q "console/style.css"
+          echo "build ok"

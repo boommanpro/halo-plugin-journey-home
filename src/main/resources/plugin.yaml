@@ -1,0 +1,21 @@
+---
+apiVersion: "plugin.halo.run/v1alpha1"
+kind: "Plugin"
+metadata:
+  name: "JourneyHome"
+  annotations:
+    store.halo.run/app-id: "app-journey-home"
+spec:
+  enabled: true
+  requires: ">=2.20.0"
+  author:
+    name: "boommanpro"
+    website: "https://github.com/boommanpro"
+  homepage: "https://github.com/boommanpro/halo-plugin-journey-home"
+  displayName: "旅程主页"
+  description: "游戏化交互式旅程主页：把个人履历做成可探索的像素城市，支持后台管理站点与全局文案"
+  license:
+  - name: "MIT"
+    url: "https://opensource.org/licenses/MIT"
+  version: "0.1.0"
+...

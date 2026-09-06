@@ -1,0 +1,16 @@
+apiVersion: v1alpha1
+kind: Role
+metadata:
+  name: journey-home-anonymous
+  labels:
+    halo.run/role-template: "true"
+    halo.run/hidden: "true"
+    rbac.authorization.halo.run/aggregate-to-anonymous: "true"
+    rbac.authorization.halo.run/display-name: "旅程主页公开访问"
+  annotations:
+    rbac.authorization.halo.run/module: "旅程主页"
+    rbac.authorization.halo.run/ui-permissions: |
+      []
+rules:
+  - nonResourceURLs: ["/journey", "/journey/", "/journey-api", "/journey-api/*", "/journey-api/**"]
+    verbs: ["get"]

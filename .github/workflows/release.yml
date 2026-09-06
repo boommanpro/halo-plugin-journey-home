@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+
+      - name: Build plugin
+        run: ./gradlew build --no-daemon
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify plugin version matches tag
+        run: |
+          PKG_VERSION=$(grep -oP 'version:\s*"\K[^"]+' src/main/resources/plugin.yaml)
+          GRADLE_VERSION=$(grep -oP '^version=\K\S+' gradle.properties)
+          if [ "$PKG_VERSION" != "${{ steps.version.outputs.version }}" ] || [ "$GRADLE_VERSION" != "${{ steps.version.outputs.version }}" ]; then
+            echo "::error::version mismatch: plugin.yaml=$PKG_VERSION, gradle.properties=$GRADLE_VERSION, tag=${{ steps.version.outputs.version }}"
+            exit 1
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/halo-plugin-journey-home-${{ steps.version.outputs.version }}.jar
+          generate_release_notes: true
+          body: |
+            ## 安装
+
+            1. Halo Console → 插件 → 安装
+            2. 上传附件 `halo-plugin-journey-home-${{ steps.version.outputs.version }}.jar`，或使用本 Release 页面地址在线安装
+            3. 启用插件
+
+            ## 使用
+
+            1. 在插件设置中添加旅程站点（名称、时期、建筑类型、内容）
+            2. 创建页面时选择「Journey 交互式旅程」模板（需 boommanpro 主题）
+            3. 前端 `/journey` 即可访问，支持完全键盘控制
+
+            > 环境要求：Halo >= 2.20.0

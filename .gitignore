@@ -1,0 +1,14 @@
+.gradle/
+build/
+workplace/
+!gradle/wrapper/gradle-wrapper.jar
+
+.idea/
+*.iml
+.vscode/
+
+node_modules/
+ui/dist/
+
+*.log
+.DS_Store
