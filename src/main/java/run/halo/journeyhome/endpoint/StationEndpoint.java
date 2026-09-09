@@ -77,8 +77,8 @@ public class StationEndpoint implements RouterFunction<ServerResponse> {
 
     private Mono<ServerResponse> saveConfig(ServerRequest request) {
         return request.bodyToMono(JourneyPageConfig.class)
-            .map(cfg -> cfg.getSpec())
-            .flatMap(service::savePageConfig)
+            // spec 为空的非法请求由 service 层统一校验并返回 400
+            .flatMap(cfg -> service.savePageConfig(cfg.getSpec()))
             .flatMap(vo -> ServerResponse.ok().bodyValue(vo));
     }
 }

@@ -88,8 +88,7 @@ haloPlugin {
             extensionApis {
                 displayName = 'Extension API for journey-home'
                 pathsToMatch = [
-                    '/apis/console.api.journey-home.halo.run/v1alpha1/**',
-                    '/apis/journey-home.halo.run/v1alpha1/**'
+                    '/apis/console.api.journey-home.halo.run/v1alpha1/**'
                 ]
             }
         }

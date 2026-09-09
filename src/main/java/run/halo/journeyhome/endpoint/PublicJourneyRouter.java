@@ -28,6 +28,10 @@ public class PublicJourneyRouter implements RouterFunction<ServerResponse> {
 
     @Override
     public Mono<HandlerFunction<ServerResponse>> route(ServerRequest request) {
+        // 公开 API 仅响应 GET，其他方法一律不匹配（由全局 405/404 处理）
+        if (request.method() != org.springframework.http.HttpMethod.GET) {
+            return Mono.empty();
+        }
         String path = request.path();
         if (path.equals(API_PREFIX + "/stations")) {
             return Mono.just(this::listStations);
