@@ -17,5 +17,5 @@ spec:
   license:
   - name: "MIT"
     url: "https://opensource.org/licenses/MIT"
-  version: "0.1.0"
+  version: "0.1.1"
 ...
