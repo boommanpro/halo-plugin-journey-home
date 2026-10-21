@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          cache-dependency-path: ui/pnpm-lock.yaml
+          cache-dependency-path: "**/pnpm-lock.yaml"
 
       - name: Build plugin
         run: ./gradlew build --no-daemon
@@ -60,7 +60,8 @@ jobs:
             ## 使用
 
             1. 在插件设置中添加旅程站点（名称、时期、建筑类型、内容）
-            2. 创建页面时选择「Journey 交互式旅程」模板（需 boommanpro 主题）
-            3. 前端 `/journey` 即可访问，支持完全键盘控制
+            2. 安装启用插件后直接访问 `/journey-3d/` 体验内置 3D 纸墨小街（无需主题）
+            3. 若使用 boommanpro 主题，也可创建页面选择「Journey 交互式旅程」模板，访问 `/journey` 体验像素城市版
+            4. 支持拖动环顾、点击寻路、方向键行走与日夜切换
 
             > 环境要求：Halo >= 2.20.0
