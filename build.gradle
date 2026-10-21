@@ -67,8 +67,35 @@ tasks.register('processUiResources') {
     }
 }
 
+tasks.register('frontendInstall', Exec) {
+    workingDir = file("${rootDir}/frontend")
+    commandLine 'pnpm', 'install', '--prefer-offline', '--no-frozen-lockfile'
+    ignoreExitValue = false
+}
+
+tasks.register('frontendBuild', Exec) {
+    workingDir = file("${rootDir}/frontend")
+    commandLine 'pnpm', 'run', 'build'
+    ignoreExitValue = false
+    dependsOn 'frontendInstall'
+}
+
+tasks.register('processJourney3dResources') {
+    dependsOn 'frontendBuild'
+    doLast {
+        copy {
+            from "${rootDir}/frontend/dist"
+            into "${buildDir}/resources/main/journey-3d"
+        }
+        copy {
+            from "${rootDir}/frontend/dist"
+            into "${buildDir}/classes/java/main/journey-3d"
+        }
+    }
+}
+
 tasks.named('classes') {
-    dependsOn tasks.named('processUiResources')
+    dependsOn tasks.named('processUiResources'), tasks.named('processJourney3dResources')
 }
 
 tasks.named('generatePluginComponentsIdx') {
