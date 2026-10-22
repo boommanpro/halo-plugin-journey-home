@@ -10,7 +10,15 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
   const layout = layoutStations(stations);
   const extent = layout.width / 2;
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#eee8db');
+  // 背景与宿主页面（主题）背景色保持一致，实现无缝内嵌
+  const pageBackground = () => {
+    const color = getComputedStyle(document.body).backgroundColor;
+    return color && color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent'
+      ? new THREE.Color(color)
+      : new THREE.Color('#eee8db');
+  };
+  const dayBackground = pageBackground();
+  scene.background = dayBackground;
   const world = new THREE.Group();
   world.name = 'paper-ink-street';
   scene.add(world);
@@ -611,7 +619,8 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
   function setNight(value) {
     if (destroyed) return;
     const night = Boolean(value);
-    scene.background.set(night ? '#202d35' : '#eee8db');
+    scene.background.set(night ? '#202d35' : '');
+    if (!night) scene.background.copy(dayBackground);
     hemi.color.set(night ? '#a3b6d8' : '#fff7e3');
     hemi.groundColor.set(night ? '#45454e' : '#aaa38c');
     hemi.intensity = night ? 0.8 : 2.5;
