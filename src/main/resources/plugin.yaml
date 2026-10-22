@@ -13,9 +13,9 @@ spec:
     website: "https://github.com/boommanpro"
   homepage: "https://github.com/boommanpro/halo-plugin-journey-home"
   displayName: "旅程主页"
-  description: "游戏化交互式旅程主页：内置 3D 纸墨小街（/journey-3d/，Three.js 渲染），支持后台管理站点与全局文案"
+  description: "游戏化交互式旅程主页：/journey 是一条可漫步的 3D 纸墨小街（Three.js 渲染），建筑由博客文章与分类实时生成，支持配置文案、主建筑与分类"
   license:
   - name: "MIT"
     url: "https://opensource.org/licenses/MIT"
-  version: "0.1.2"
+  version: "0.2.0"
 ...

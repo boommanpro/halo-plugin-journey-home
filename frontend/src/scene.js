@@ -142,44 +142,67 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     box(0.12, 0.09, 17.6, offset, 0.08, 0, 'cream');
   });
 
-  function building(id, label, subtitle, x, z, h, accent, facing, type) {
+  function building(id, label, subtitle, x, z, { height: h, wall, roof, width: w, facing, type }) {
     const group = new THREE.Group();
     group.name = id;
     group.userData.buildingId = id;
     group.position.set(x, 0.1, z);
     group.rotation.y = facing;
     world.add(group);
-    const w = 5.1;
     const d = 3.6;
+    const winOffset = (w - 1.8) / 2;
+    const flatTop = roof !== 'gable';
+    const topY = flatTop ? h + 0.36 : h + 0.2;
     box(w + 0.3, 0.25, d + 0.3, 0, 0.08, 0, 'base', group, true);
-    box(w, h, d, 0, h / 2 + 0.2, 0, accent, group, true);
+    box(w, h, d, 0, h / 2 + 0.2, 0, wall, group, true);
     box(w + 0.08, 0.22, d + 0.08, 0, 0.4, 0, 'wood', group);
     [-w / 2 + 0.1, w / 2 - 0.1].forEach((side) => box(0.14, h, 0.12, side, h / 2 + 0.2, d / 2 + 0.04, 'cream', group));
-    const roofShape = new THREE.Shape();
-    roofShape.moveTo(-w / 2 - 0.3, 0);
-    roofShape.lineTo(w / 2 + 0.3, 0);
-    roofShape.lineTo(0, 1.55);
-    roofShape.closePath();
-    const roofGeometry = geometry('gable', () => new THREE.ExtrudeGeometry(roofShape, { depth: d + 0.6, bevelEnabled: false }));
-    mesh(roofGeometry, 'roof', 0, h + 0.2, -d / 2 - 0.3, group, true);
-    const slope = Math.atan2(1.55, w / 2 + 0.3);
-    const length = Math.hypot(w / 2 + 0.3, 1.55);
-    for (let row = 0; row <= 9; row += 1) {
-      [-1, 1].forEach((side) => {
-        const rib = box(length, 0.035, 0.04, side * (w / 2 + 0.3) / 2, h + 0.2 + 0.795, -d / 2 - 0.28 + row * 0.46, 'tile', group);
-        rib.rotation.z = -side * slope;
-      });
+    if (roof === 'skillion') {
+      // 单坡屋顶：前低后高的一面斜板
+      const slopeHeight = 1.15;
+      const slopeLen = Math.hypot(w / 2 + 0.3, slopeHeight);
+      const panel = box(slopeLen, 0.14, d + 0.6, 0, h + 0.2 + slopeHeight / 2, 0, 'roof', group, true);
+      panel.rotation.z = Math.atan2(slopeHeight, w / 2 + 0.3);
+      for (let row = 0; row <= 6; row += 1) {
+        const rib = box(slopeLen, 0.035, 0.04, 0, h + 0.2 + slopeHeight / 2, -d / 2 - 0.28 + row * 0.62, 'tile', group);
+        rib.rotation.z = panel.rotation.z;
+      }
+      cylinder(0.1, 0.1, d + 0.7, 0, h + 0.3, 0, 'tile', group).rotation.x = Math.PI / 2;
+    } else if (roof === 'flat') {
+      // 平顶：顶板 + 矮护栏围合 + 屋顶小机房
+      box(w + 0.3, 0.16, d + 0.5, 0, h + 0.28, 0, 'roof', group, true);
+      [d / 2 + 0.2, -d / 2 - 0.2].forEach((zz) => box(w + 0.3, 0.34, 0.1, 0, h + 0.52, zz, 'cream', group, true));
+      [w / 2 + 0.15, -w / 2 - 0.15].forEach((xx) => box(0.1, 0.34, d + 0.5, xx, h + 0.52, 0, 'cream', group));
+      box(1.3, 0.5, 0.95, w / 2 - 1.1, h + 0.6, -0.4, 'cream', group, true);
+      box(1.42, 0.07, 1.05, w / 2 - 1.1, h + 0.88, -0.4, 'wood', group);
+    } else {
+      // 三角坡顶（默认）
+      const roofShape = new THREE.Shape();
+      roofShape.moveTo(-w / 2 - 0.3, 0);
+      roofShape.lineTo(w / 2 + 0.3, 0);
+      roofShape.lineTo(0, 1.55);
+      roofShape.closePath();
+      const roofGeometry = geometry(`gable:${w}`, () => new THREE.ExtrudeGeometry(roofShape, { depth: d + 0.6, bevelEnabled: false }));
+      mesh(roofGeometry, 'roof', 0, h + 0.2, -d / 2 - 0.3, group, true);
+      const slope = Math.atan2(1.55, w / 2 + 0.3);
+      const length = Math.hypot(w / 2 + 0.3, 1.55);
+      for (let row = 0; row <= 9; row += 1) {
+        [-1, 1].forEach((side) => {
+          const rib = box(length, 0.035, 0.04, side * (w / 2 + 0.3) / 2, h + 0.2 + 0.795, -d / 2 - 0.28 + row * 0.46, 'tile', group);
+          rib.rotation.z = -side * slope;
+        });
+      }
+      cylinder(0.1, 0.1, d + 0.7, 0, h + 1.78, 0, 'tile', group).rotation.x = Math.PI / 2;
     }
-    cylinder(0.1, 0.1, d + 0.7, 0, h + 1.78, 0, 'tile', group).rotation.x = Math.PI / 2;
-    box(0.55, 1.1, 0.55, -1.5, h + 1.15, -0.7, 'wood', group, true);
-    box(0.7, 0.16, 0.7, -1.5, h + 1.72, -0.7, 'cream', group);
+    box(0.55, 1.1, 0.55, -w / 2 + 1.05, topY + 0.95, -0.7, 'wood', group, true);
+    box(0.7, 0.16, 0.7, -w / 2 + 1.05, topY + 1.52, -0.7, 'cream', group);
     const front = d / 2 + 0.04;
     box(0.98, 1.86, 0.13, 0, 1.17, front, 'ink', group, true);
     box(0.78, 1.65, 0.06, 0, 1.17, front + 0.08, 'wood', group);
     box(0.57, 0.85, 0.04, 0, 1.42, front + 0.12, 'glass', group);
     sphere(0.045, 0.29, 0.94, front + 0.18, 'gold', group);
     box(1.3, 0.12, 0.5, 0, 0.16, front + 0.2, 'cream', group, true);
-    [-1.65, 1.65].forEach((wx) => {
+    [-winOffset, winOffset].forEach((wx) => {
       box(1.24, 1.44, 0.12, wx, 1.54, front, 'ink', group, true);
       box(1.08, 1.28, 0.06, wx, 1.54, front + 0.08, 'glass', group);
       box(0.065, 1.3, 0.06, wx, 1.54, front + 0.13, 'cream', group);
@@ -200,7 +223,7 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     const rear = new THREE.Group();
     rear.rotation.y = Math.PI;
     group.add(rear);
-    [-1.55, 1.55].forEach((wx) => {
+    [-(winOffset - 0.1), winOffset - 0.1].forEach((wx) => {
       box(1.3, 1.45, 0.12, wx, 1.55, front, 'wood', rear, true);
       box(1.12, 1.27, 0.06, wx, 1.55, front + 0.09, 'glass', rear);
       box(0.07, 1.3, 0.06, wx, 1.55, front + 0.14, 'cream', rear);
@@ -209,23 +232,25 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     });
     sign(label, subtitle, 2.6, 0.67, 0, h - 0.35, front + 0.12, rear);
     if (type === 'studio') {
-      box(0.85, 1.05, 0.09, -2.1, 1, front + 0.65, 'wood', group, true).rotation.z = -0.08;
-      box(0.68, 0.83, 0.06, -2.1, 1.04, front + 0.72, 'cream', group);
-      sphere(0.2, -2.1, 1.13, front + 0.78, 'roof', group).scale.z = 0.12;
+      box(0.85, 1.05, 0.09, -w / 2 + 0.45, 1, front + 0.65, 'wood', group, true).rotation.z = -0.08;
+      box(0.68, 0.83, 0.06, -w / 2 + 0.45, 1.04, front + 0.72, 'cream', group);
+      sphere(0.2, -w / 2 + 0.45, 1.13, front + 0.78, 'roof', group).scale.z = 0.12;
     } else if (type === 'workshop') {
-      box(1.25, 0.15, 0.65, 1.75, 0.72, front + 0.6, 'wood', group, true);
-      [-0.48, 0.48].forEach((offset) => box(0.1, 0.65, 0.5, 1.75 + offset, 0.35, front + 0.6, 'ink', group));
-      [0, 1, 2].forEach((i) => cylinder(0.12, 0.18, 0.28 + i * 0.09, 1.4 + i * 0.34, 0.94, front + 0.6, i % 2 ? 'cream' : 'roof', group));
-      const skylight = new THREE.Group();
-      skylight.position.set(1.3, h + 1.1, 0);
-      skylight.rotation.z = -slope;
-      group.add(skylight);
-      box(1.7, 0.14, 1.9, 0, 0, 0, 'wood', skylight, true);
-      box(1.5, 0.06, 1.7, 0, 0.1, 0, 'glass', skylight);
-      box(0.07, 0.07, 1.7, 0, 0.15, 0, 'cream', skylight);
-      box(1.5, 0.07, 0.07, 0, 0.15, 0, 'cream', skylight);
+      box(1.25, 0.15, 0.65, w / 2 - 0.8, 0.72, front + 0.6, 'wood', group, true);
+      [-0.48, 0.48].forEach((offset) => box(0.1, 0.65, 0.5, w / 2 - 0.8 + offset, 0.35, front + 0.6, 'ink', group));
+      [0, 1, 2].forEach((i) => cylinder(0.12, 0.18, 0.28 + i * 0.09, w / 2 - 1.15 + i * 0.34, 0.94, front + 0.6, i % 2 ? 'cream' : 'roof', group));
+      if (!flatTop) {
+        const skylight = new THREE.Group();
+        skylight.position.set(1.3, h + 1.1, 0);
+        skylight.rotation.z = -Math.atan2(1.55, w / 2 + 0.3);
+        group.add(skylight);
+        box(1.7, 0.14, 1.9, 0, 0, 0, 'wood', skylight, true);
+        box(1.5, 0.06, 1.7, 0, 0.1, 0, 'glass', skylight);
+        box(0.07, 0.07, 1.7, 0, 0.15, 0, 'cream', skylight);
+        box(1.5, 0.07, 0.07, 0, 0.15, 0, 'cream', skylight);
+      }
       const gear = new THREE.Group();
-      gear.position.set(0, h + 0.7, front + 0.3);
+      gear.position.set(0, topY + 0.5, front + 0.3);
       group.add(gear);
       cylinder(0.42, 0.42, 0.12, 0, 0, 0, 'gold', gear, 24).rotation.x = Math.PI / 2;
       for (let i = 0; i < 10; i += 1) {
@@ -234,9 +259,9 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
       }
       cylinder(0.15, 0.15, 0.15, 0, 0, 0.02, 'ink', gear, 24).rotation.x = Math.PI / 2;
     } else if (type === 'archive') {
-      box(1.3, 0.85, 0.45, -1.8, 0.55, front + 0.6, 'wood', group, true);
-      for (let i = 0; i < 7; i += 1) box(0.12, 0.4 + i % 3 * 0.08, 0.3, -2.3 + i * 0.16, 0.9, front + 0.6, ['blue', 'roof', 'cream'][i % 3], group);
-      [-1.65, 1.65].forEach((wx) => {
+      box(1.3, 0.85, 0.45, -w / 2 + 0.75, 0.55, front + 0.6, 'wood', group, true);
+      for (let i = 0; i < 7; i += 1) box(0.12, 0.4 + i % 3 * 0.08, 0.3, -w / 2 + 0.25 + i * 0.16, 0.9, front + 0.6, ['blue', 'roof', 'cream'][i % 3], group);
+      [-winOffset, winOffset].forEach((wx) => {
         box(1.1, 1.3, 0.08, wx, 1.54, front + 0.18, 'ink', group);
         for (let row = 0; row < 2; row += 1) {
           const shelfY = 0.95 + row * 0.6;
@@ -247,9 +272,11 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
           }
         }
       });
+      const baseBookY = flatTop ? topY + 0.26 : h + 1.95;
+      const bookStep = flatTop ? 0.31 : 0.29;
       for (let i = 0; i < 3; i += 1) {
         const book = new THREE.Group();
-        book.position.set(0, h + 1.95 + i * 0.29, 0);
+        book.position.set(0, baseBookY + i * bookStep, 0);
         book.rotation.y = (i - 1) * 0.18;
         group.add(book);
         box(2.1, 0.19, 1.25, 0, 0, 0, 'cream', book, true);
@@ -257,10 +284,11 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
         box(0.09, 0.27, 1.35, -1.07, 0, 0, ['blue', 'roof', 'green'][i], book);
       }
     } else {
-      const record = cylinder(0.42, 0.42, 0.06, -1.7, h - 0.35, front + 0.15, 'ink', group, 32);
+      const record = cylinder(0.42, 0.42, 0.06, -w / 2 + 0.85, h - 0.35, front + 0.15, 'ink', group, 32);
       record.rotation.x = Math.PI / 2;
       cylinder(0.13, 0.13, 0.07, 0, 0.01, 0, 'gold', record, 24);
-      const rooftopRecord = cylinder(0.88, 0.88, 0.14, 0, h + 2.25, 0, 'ink', group, 48);
+      const rooftopRecordY = flatTop ? topY + 0.5 : h + 2.25;
+      const rooftopRecord = cylinder(0.88, 0.88, 0.14, 0, rooftopRecordY, 0, 'ink', group, 48);
       rooftopRecord.rotation.x = Math.PI / 2;
       [-1, 1].forEach((side) => {
         cylinder(0.29, 0.29, 0.02, 0, side * 0.08, 0, 'gold', rooftopRecord, 32);
@@ -276,9 +304,19 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     buildings.set(id, group);
   }
 
+  // 建筑变体轮换表：让每栋房子在高度、墙色、屋顶与开间上都不重样（主建筑由数据指定覆盖）
+  const WALL_VARIANTS = ['cream', 'paper', 'white', 'sand'];
+  const ROOF_VARIANTS = ['gable', 'skillion', 'flat'];
+
   layout.buildings.forEach((station, index) => {
-    building(station.id, station.name, station.period, station.x, station.z,
-      3.2 + index % 3 * 0.15, index % 2 ? 'paper' : 'cream', station.facing, station.type);
+    building(station.id, station.signName || station.name, station.period, station.x, station.z, {
+      height: station.height ?? 3.0 + (index * 7 % 5) * 0.5,
+      wall: station.accent ?? WALL_VARIANTS[index % WALL_VARIANTS.length],
+      roof: station.roof ?? ROOF_VARIANTS[(index + 1) % ROOF_VARIANTS.length],
+      width: station.width ?? (index % 3 === 1 ? 6.2 : 5.1),
+      facing: station.facing,
+      type: station.type,
+    });
   });
 
   function tree(x, z, scale = 1) {

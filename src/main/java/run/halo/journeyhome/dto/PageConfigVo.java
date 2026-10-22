@@ -1,5 +1,7 @@
 package run.halo.journeyhome.dto;
 
+import java.util.List;
+
 public record PageConfigVo(
         String siteName,
         String siteTagline,
@@ -9,5 +11,11 @@ public record PageConfigVo(
         String heroSubtitle,
         String afterwordTitle,
         String afterwordText,
-        String readingsTitle
+        String readingsTitle,
+        String mainTitle,
+        String mainSubtitle,
+        String mainSummary,
+        String mainUrl,
+        Integer postCount,
+        List<String> categorySlugs
 ) {}

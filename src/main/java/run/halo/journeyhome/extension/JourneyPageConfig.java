@@ -1,6 +1,8 @@
 package run.halo.journeyhome.extension;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -67,5 +69,29 @@ public class JourneyPageConfig extends AbstractExtension {
         /** 「直接阅读」降级列表的标题 */
         @Schema(maxLength = 50)
         private String readingsTitle = "直接阅读个人介绍与完整职业经历";
+
+        /** 主建筑标题（街道第一栋，默认指向个人介绍页） */
+        @Schema(maxLength = 30)
+        private String mainTitle = "关于我";
+
+        /** 主建筑招牌副标题 */
+        @Schema(maxLength = 50)
+        private String mainSubtitle = "ABOUT ME";
+
+        /** 主建筑卡片简介（留空时前台回退到副标题文案） */
+        @Schema(maxLength = 200)
+        private String mainSummary = "";
+
+        /** 主建筑「查看完整介绍」跳转链接 */
+        @Schema(maxLength = 200)
+        private String mainUrl = "/about";
+
+        /** 文章建筑数量（4–12，超出范围时取默认值） */
+        @Schema(minimum = "4", maximum = "12")
+        private Integer postCount = 6;
+
+        /** 分类建筑对应的分类 slug（按顺序渲染；为空时自动取文章数前 2，最多 4 个） */
+        @Schema
+        private List<String> categorySlugs = new ArrayList<>();
     }
 }

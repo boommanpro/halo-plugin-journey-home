@@ -1,139 +1,115 @@
 # Halo Journey Home · 旅程主页
 
-一个游戏化的 Halo 交互式旅程主页插件：把个人履历做成一座**可探索的 3D 纸墨小街**（插件内置页面，Three.js 渲染），也可配合主题渲染**像素城市**版本。访客拖动环顾街区、操控小人行走、走进每栋建筑阅读人生章节。
+一个游戏化 Halo 博客主页插件：配合 [halo-theme-boommanpro](https://github.com/boommanpro/halo-theme-boommanpro) 主题（≥ 1.3.0）的 `journey` 页面模板，把 `/journey` 变成**主题页面内嵌的 3D 纸墨小街**——页面保留主题的页头/导航/页脚，内容区是一条可漫步的街道。建筑由博客内容实时生成：走进每栋房子，读一篇文章、逛一个分类、认识博主。
 
-> 从城市出发，在校园继续 —— 每一步，都通向新的自己。
-
-![旅程主页 · 3D 纸墨小街（日间）](docs/screenshots/journey-3d-light.jpg)
+> 写作即存档，构建即思考。欢迎来小街散步。
 
 ## 特性
 
-- **3D 纸墨小街（内置页面）**：暖纸色微缩街区，锈红屋顶、树木、街灯与柔和阴影，建筑按后台站点数据自动生成排布
+- **内嵌主题页面**：由主题 `journey` 模板渲染完整页面框架（页头/导航/页脚/主题 CSS 变量），3D 大舞台（约 78vh）嵌在内容区
 
-- **拖动环顾与行走**：拖动旋转、滚轮缩放，点击空地自动寻路，方向键或 W A S D 手动行走
+- **建筑即博客内容**：街道由三类建筑组成——
+  - **主建筑 ×1**：加高的「关于我」塔楼，点击查看博主简介并跳转介绍页（标题/简介/链接后台可配）
+  - **分类地标 ×1–4**：按后台勾选的分类生成书屋造型建筑，点开显示该分类最新 5 篇文章与分类入口；未配置时自动取文章数最多的 2 个分类
+  - **文章建筑 ×4–12**：最新发布的文章，点击弹出摘要卡片，「阅读全文 ↗」跳转原文
 
-- **建筑即站点**：每栋建筑对应一个旅程站点，点击建筑或底部导航阅读章节；数量与造型完全由后台站点决定
+- **每栋房子都不一样**：三角坡顶 / 单坡顶 / 平顶护栏三种屋顶，四种墙色、高低宽窄按建筑轮换，整体保持纸墨画风
 
-- **日夜氛围**：一键切换日光 / 灯火夜景，窗户与街灯随夜景亮起
+- **完整 3D 交互**：拖动环顾、滚轮缩放、点击空地小人自动寻路、方向键 / WASD 行走、点击建筑查看、一键日夜切换（街灯与窗光点亮）、全屏
 
-- **章节阅读**：点击建筑弹出章节卡片，显示站点时间区间、导语与正文
-
-- **移动端适配**：站点导航在手机端自动变为两列网格，支持触屏拖动与行走
-
-- **Console 管理端**：站点 CRUD、发布开关、排序，全局文案（标题 / 标语 / 页脚）可视化配置
-
-![章节卡片（3D 详情弹窗）](docs/screenshots/journey-3d-detail.jpg)
-
-![夜间模式](docs/screenshots/journey-3d-night.jpg)
-
-![移动端](docs/screenshots/journey-3d-mobile.jpg)
+- **Console 可视化配置**：主建筑、分类建筑勾选、文章数量；页面标题与副文案直接在 Console「页面」里编辑
 
 ## 环境要求
 
-| 依赖   | 版本                                                                                                 |
-| ---- | -------------------------------------------------------------------------------------------------- |
-| Halo | >= 2.20.0                                                                                          |
-| 主题   | 可选。[halo-theme-boommanpro](https://github.com/boommanpro/halo-theme-boommanpro)（像素城市版由主题 `journey` 模板渲染） |
-
-> 插件提供**两种前台形态**：
-> 1. **内置 3D 小街**（`/journey-3d/`）：Three.js 渲染，读取 `/journey-api/*` 数据，无需安装主题，安装插件后即可访问。
-> 2. **主题像素城市**（`/journey`）：由 boommanpro 主题的 `journey` 模板渲染，与主题纸墨风格完全融合。
+| 依赖 | 版本 |
+| ---- | ---- |
+| Halo | >= 2.20 |
+| 主题 | [halo-theme-boommanpro](https://github.com/boommanpro/halo-theme-boommanpro) >= 1.3.0（提供 `journey` 页面模板） |
 
 ## 安装
 
-### 方式一：Release 下载
-
 1. 前往 [Releases](https://github.com/boommanpro/halo-plugin-journey-home/releases) 下载最新的 `halo-plugin-journey-home-x.y.z.jar`
-2. Halo Console → 插件 → 安装 → 上传 JAR
-3. 启用插件
-
-### 方式二：在线安装
-
-在插件安装页使用 Release 地址直接安装。
+2. Halo Console → 插件 → 安装 → 上传 JAR，启动插件
+3. 确认存在 slug 为 `journey` 的页面，且模板选择 **journey**（旧版插件创建的页面已满足；没有的话：Console → 页面 → 创建，slug 填 `journey`，模板选 `journey`，发布）
 
 ## 使用
 
-### 0. 直接访问 3D 小街（无需主题）
+### 配置小街
 
-安装并启用插件后，直接访问：
+Console → 插件 → 旅程主页 → **页面设置**：
 
-```
-/journey-3d/
-```
+- **主建筑**：标题、招牌副标题、卡片简介、「查看完整介绍」跳转链接（默认 `/about`）
+- **分类建筑**：勾选作为地标建筑的分类（按勾选顺序，最多 4 个；不勾选自动取文章数前 2）
+- **街道规模**：文章建筑数量（4–12，默认 6）
 
-页面自动读取 `/journey-api/*` 数据渲染街区，站点数量与建筑造型完全由后台配置决定。
+页面主标题与副文案在 Console「页面」中编辑（作为页面的标题和摘要）。
 
-### 1. 创建旅程页面（主题像素版，可选）
+### 数据来源
 
-1. 安装并启用 [boommanpro 主题](https://github.com/boommanpro/halo-theme-boommanpro)
-2. Console → 页面 → 创建页面，slug 建议 `journey`
-3. 模板选择 **「Journey 交互式旅程」**
-4. 发布后访问 `/journey` 即可
+街道完全由博客内容驱动，无需手动维护站点数据：
 
-### 2. 配置站点
-
-![Console 站点管理](docs/screenshots/console-stations.jpg)
-
-Console → 插件 → 旅程主页 → **站点管理**：
-
-- 新增站点：名称、时间区间（如 `2013 — 2016`）、建筑造型、导语、Markdown 正文
-
-- 支持搜索、编辑、删除、发布开关
-
-- 编号即街道上的排列顺序
-
-### 3. 全局文案
-
-![Console 页面设置](docs/screenshots/console-config.jpg)
-
-Console → 插件 → 旅程主页 → **页面设置**：配置主标题、副标题、页头标语、页脚文案、阅读区标题等，保存后前台即时生效。
+- 文章建筑 = 最新已发布且公开的文章（标题、日期、摘要、永久链接）
+- 分类地标 = 所选分类（名称、文章数、最新 5 篇）
+- 右上角统计与「全部 N 篇 → 归档」入口来自全站公开文章数
 
 ## 3D 小街操作
 
-| 操作                | 功能            |
-| ----------------- | ------------- |
-| 拖动 / 滚轮          | 旋转环顾 / 缩放街区 |
-| 点击空地             | 小人自动步行过去     |
-| `←` `→` `↑` `↓` / `W` `A` `S` `D` | 手动行走 |
-| 点击建筑 / 底部导航       | 打开站点章节        |
-| 右侧日夜按钮 / 回转按钮     | 切换夜景 / 恢复全景  |
+| 操作                      | 功能                 |
+| ------------------------- | -------------------- |
+| 拖动 / 滚轮               | 旋转环顾 / 缩放街区  |
+| 点击空地                  | 小人自动步行过去     |
+| `←→↑↓` / `W` `A` `S` `D` | 手动行走             |
+| 点击建筑                  | 打开对应卡片         |
+| 右侧工具条                | 日夜切换 / 全景 / 全屏 / 帮助 |
 
 ## 技术实现
 
 ```
 halo-plugin-journey-home/
 ├── src/main/java/run/halo/journeyhome/
-│   ├── extension/     # JourneyStation / JourneyPageConfig 自定义模型
-│   ├── endpoint/      # 公开 API（/journey-api）+ 3D 页面路由（/journey-3d）+ Console 管理 API
-│   └── service/       # 站点服务
-├── frontend/          # 内置 3D 小街（Vite + Three.js，构建后打包进 JAR）
-│   └── src/           # scene.js 场景 / main.js 页面 / data.js 数据接入 / style.css 纸墨样式
+│   ├── endpoint/      # 公开 API（/journey-api/street）+ Console API（config / categories）
+│   ├── extension/     # JourneyPageConfig 配置模型
+│   ├── service/       # StreetService（博客内容聚合）/ JourneyConfigService
+│   └── dto/           # StreetVo / PageConfigVo / CategoryVo
+├── src/main/resources/
+│   ├── static/                          # 3D 前端产物（street.js / street.css / three.js）
+│   └── extensions/                      # ReverseProxy 静态资源声明 + 匿名访问权限
+├── frontend/          # 3D 小街源码（Vite + Three.js，内嵌模式构建）
 └── ui/                # Console 管理端（Vue 3 + @halo-dev/console-shared）
-    └── src/views/     # 站点列表 / 站点编辑 / 页面设置
+
+halo-theme-boommanpro/
+└── templates/journey.html   # 页面模板：主题布局框架 + 3D 容器 + 引用插件静态资源
 ```
 
-3D 小街由插件 `frontend/` 构建产物（`journey-3d/` 资源）随 JAR 分发，`Journey3dRouter` 通过插件类加载器返回 HTML 与静态资源，匿名权限已放行。页面通过 `createScene` 按 `layoutStations` 动态排布建筑，读取 `/journey-api/*` 数据，不依赖主题。
+- **页面渲染**：`/journey` 由 Halo 页面机制 + 主题 `journey` 模板渲染（主题布局、CSS 变量、暗色模式原生适配）；模板内容区放置 `#journey-street` 容器并引用 `/plugins/JourneyHome/assets/street.js|css`
+- **3D 资源**：前端构建产物（固定文件名）随插件 JAR 分发，经 `ReverseProxy` 在 `/plugins/JourneyHome/assets/**` 匿名访问
+- **数据接口**（仅 GET、匿名可访问）：
 
-主题像素城市版本（像素小人、rAF 游戏循环、键盘状态机）在主题模板 `templates/journey.html` 中实现，全部使用主题 CSS 变量，自动适配深浅色。
+| 接口                          | 说明                                          |
+| ----------------------------- | --------------------------------------------- |
+| `GET /journey-api/street`     | 街道数据（主建筑 / 分类地标 / 文章建筑 / 统计） |
 
-### 公开接口
-
-| 接口                          | 说明            |
-| --------------------------- | ------------- |
-| `GET /journey-api/stations` | 已发布站点列表（无需登录） |
-| `GET /journey-api/config`   | 全局页面文案（无需登录）  |
+- **建筑变体**：屋顶（坡顶/单坡/平顶）、墙色、高度、宽度按建筑索引确定性轮换，同数据渲染稳定
 
 ## 开发
 
 ```bash
-# 构建（自动安装前端依赖并打包 Console UI）
+# 构建全部（前端 3D + Console UI + 后端，产出 JAR）
 ./gradlew build
 
-# 产物
-build/libs/halo-plugin-journey-home-x.y.z.jar
+# 本地预览 3D 小街（带 mock 数据宿主页）
+cd frontend && pnpm install && pnpm dev
+# 打开 http://127.0.0.1:5173/embed-demo.html
 ```
 
 要求：JDK 21、Node 20+、pnpm 9。
+
+## 从 0.1.x 升级（不兼容变更）
+
+1. **先升级主题到 ≥ 1.3.0**（新版 `journey` 模板），再升级本插件到 0.2.0
+2. `/journey-3d/` 独立页面已移除
+3. **站点管理（JourneyStation 手动维护）已删除**，街道数据全部来自博客文章与分类；旧站点数据保留在数据库但不再使用
+4. Console 中 journey 页面确认模板为 **journey**；导航菜单无需改动
 
 ## License
 

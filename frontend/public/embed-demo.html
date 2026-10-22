@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>内嵌 3D 小街 · 本地预览宿主页</title>
+  <style>
+    /* 模拟 boommanpro 主题页面框架：仅用于本地预览内嵌效果 */
+    body { margin: 0; font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f0; color: #323b34; }
+    .fake-header { height: 60px; display: flex; align-items: center; gap: 14px; padding: 0 32px; border-bottom: 1px solid #b7b09d; background: #f6f1e6; }
+    .fake-header strong { font-family: Georgia, serif; font-size: 20px; }
+    .fake-header span { font-size: 12px; color: #77796c; }
+    .fake-header nav { margin-left: auto; font-size: 13px; display: flex; gap: 18px; color: #77796c; }
+    .fake-main { max-width: 1080px; margin: 28px auto 60px; padding: 0 24px; }
+    .fake-main h1 { font-family: Georgia, serif; font-size: 26px; letter-spacing: 2px; }
+    .fake-main .fake-sub { color: #77796c; font-size: 13px; margin-bottom: 22px; }
+    .fake-footer { text-align: center; color: #9c9a8c; font-size: 12px; padding: 26px 0 34px; border-top: 1px solid #ded7c4; }
+  </style>
+</head>
+<body>
+  <header class="fake-header">
+    <strong>boommanpro.</strong><span>爱生活，爱 Coding .....</span>
+    <nav><a>首页</a><a>归档</a><a>分类</a><a>journey</a></nav>
+  </header>
+  <main class="fake-main">
+    <h1>NO.01 — INTERACTIVE JOURNEY / 可探索的旅程</h1>
+    <p class="fake-sub">这一段是主题页面自己的标题区（真实环境由主题渲染）。</p>
+    <div id="journey-street" class="journey-street"></div>
+  </main>
+  <footer class="fake-footer">© boommanpro · 主题页脚</footer>
+  <script type="module" src="/src/embed.js"></script>
+</body>
+</html>

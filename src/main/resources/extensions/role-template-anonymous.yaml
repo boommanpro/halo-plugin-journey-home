@@ -12,7 +12,5 @@ metadata:
     rbac.authorization.halo.run/ui-permissions: |
       []
 rules:
-  - nonResourceURLs: ["/journey-3d", "/journey-3d/", "/journey-3d/**"]
-    verbs: ["get"]
-  - nonResourceURLs: ["/journey", "/journey/", "/journey-api", "/journey-api/*", "/journey-api/**"]
+  - nonResourceURLs: ["/journey-api", "/journey-api/*", "/journey-api/**"]
     verbs: ["get"]

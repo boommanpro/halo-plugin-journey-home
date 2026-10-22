@@ -14,22 +14,97 @@ export function normalizeConfig(value) {
   };
 }
 
-export function normalizeStations(value) {
-  if (!Array.isArray(value)) throw new Error('站点格式错误');
-  const names = new Set();
-  return value.filter(station => {
-    if (!station || station.published !== true || !text(station.name) || names.has(station.name)) return false;
-    names.add(station.name);
-    return true;
-  }).sort((a, b) => (Number(a.chapterNo) || 0) - (Number(b.chapterNo) || 0)).map((station, index) => ({
-    id: station.name,
-    number: String(index + 1).padStart(2, '0'),
-    name: text(station.displayName, '未命名站点'),
-    period: text(station.period),
-    summary: text(station.summary),
-    content: text(station.content, '这一站的故事尚未填写。'),
-    type: ({ cottage: 'studio', workshop: 'workshop', district: 'archive', tower: 'sound', lab: 'workshop', campus: 'archive' })[station.buildingType] || 'studio',
-  }));
+function normalizeBuilding(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('建筑数据格式错误');
+  return {
+    title: text(value.title, '未命名'),
+    subtitle: text(value.subtitle),
+    summary: text(value.summary),
+    url: text(value.url),
+  };
+}
+
+function normalizeCategory(value) {
+  const building = normalizeBuilding(value);
+  return {
+    ...building,
+    posts: Array.isArray(value?.posts) ? value.posts.map(post => ({
+      title: text(post?.title, '未命名文章'),
+      url: text(post?.url),
+      date: text(post?.date),
+    })).filter(post => post.url) : [],
+  };
+}
+
+export function normalizeStreet(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('街道数据格式错误');
+  return {
+    main: normalizeBuilding(value.main),
+    categories: Array.isArray(value.categories) ? value.categories.map(normalizeCategory) : [],
+    posts: Array.isArray(value.posts) ? value.posts.map(normalizeBuilding).filter(post => post.url) : [],
+    totalPosts: Number(value.totalPosts) || 0,
+  };
+}
+
+/** 建筑招牌文字：按视觉宽度截断（全角字符计 2、半角计 1），避免长文章标题撑爆招牌。 */
+export function signName(name, maxUnits = 14) {
+  let units = 0;
+  let end = 0;
+  for (const char of name) {
+    const width = char.codePointAt(0) > 0xff ? 2 : 1;
+    if (units + width > maxUnits) break;
+    units += width;
+    end += char.length;
+  }
+  return end < name.length ? `${name.slice(0, end)}…` : name;
+}
+
+const POST_TYPES = ['workshop', 'sound', 'archive', 'studio'];
+
+/** 街道数据 → 场景建筑：主建筑（加高）+ 分类地标 + 最新文章。 */
+export function buildStations(street) {
+  const main = street.main;
+  const stations = [{
+    id: 'about',
+    kind: 'about',
+    number: '00',
+    name: main.title,
+    signName: signName(main.title),
+    period: main.subtitle,
+    summary: main.summary,
+    url: main.url,
+    type: 'studio',
+    height: 5.8,
+    accent: 'white',
+  }];
+  street.categories.forEach((category, index) => {
+    stations.push({
+      id: `category-${index}`,
+      kind: 'category',
+      number: `C${index + 1}`,
+      name: category.title,
+      signName: signName(category.title),
+      period: category.subtitle,
+      summary: category.summary,
+      url: category.url,
+      posts: category.posts,
+      type: 'archive',
+    });
+  });
+  street.posts.forEach((post, index) => {
+    stations.push({
+      id: `post-${index}`,
+      kind: 'post',
+      number: String(index + 1).padStart(2, '0'),
+      name: post.title,
+      signName: signName(post.title),
+      period: post.subtitle,
+      summary: post.summary,
+      url: post.url,
+      type: POST_TYPES[index % POST_TYPES.length],
+    });
+  });
+  return stations;
 }
 
 export function layoutStations(stations) {
@@ -53,10 +128,7 @@ export async function loadJourney(fetcher = fetch) {
     return response.json();
   };
   try {
-    const [config, stations] = await Promise.all([
-      read('/journey-api/config'), read('/journey-api/stations'),
-    ]);
-    return { config: normalizeConfig(config), stations: normalizeStations(stations) };
+    return { street: normalizeStreet(await read('/journey-api/street')) };
   } finally {
     clearTimeout(timeout);
     controller.abort();

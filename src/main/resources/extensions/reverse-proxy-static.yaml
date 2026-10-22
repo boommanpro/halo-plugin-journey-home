@@ -1,0 +1,9 @@
+apiVersion: plugin.halo.run/v1alpha1
+kind: ReverseProxy
+metadata:
+  name: journey-home-static
+rules:
+  # 最终访问路径为 /plugins/JourneyHome/assets/**（Halo 会自动拼接 /plugins/{name}/assets/ 前缀）
+  - path: /**
+    file:
+      directory: static

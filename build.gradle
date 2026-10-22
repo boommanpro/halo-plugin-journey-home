@@ -80,22 +80,22 @@ tasks.register('frontendBuild', Exec) {
     dependsOn 'frontendInstall'
 }
 
-tasks.register('processJourney3dResources') {
+tasks.register('processStreetResources') {
     dependsOn 'frontendBuild'
     doLast {
         copy {
             from "${rootDir}/frontend/dist"
-            into "${buildDir}/resources/main/journey-3d"
+            into "${buildDir}/resources/main/static"
         }
         copy {
             from "${rootDir}/frontend/dist"
-            into "${buildDir}/classes/java/main/journey-3d"
+            into "${buildDir}/classes/java/main/static"
         }
     }
 }
 
 tasks.named('classes') {
-    dependsOn tasks.named('processUiResources'), tasks.named('processJourney3dResources')
+    dependsOn tasks.named('processUiResources'), tasks.named('processStreetResources')
 }
 
 tasks.named('generatePluginComponentsIdx') {

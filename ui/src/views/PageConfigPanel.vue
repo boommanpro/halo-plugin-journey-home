@@ -7,6 +7,15 @@ const apiBase = "/apis/console.api.journey-home.halo.run/v1alpha1";
 
 const loading = ref(false);
 const saving = ref(false);
+const categoriesLoading = ref(false);
+
+interface CategoryOption {
+  displayName: string;
+  slug: string;
+  postCount: number;
+}
+
+const categories = ref<CategoryOption[]>([]);
 
 const form = ref({
   siteName: "我的旅程",
@@ -18,18 +27,36 @@ const form = ref({
   afterwordTitle: "THE JOURNEY CONTINUES",
   afterwordText: "在技术、产品与教育之间，持续行走。",
   readingsTitle: "直接阅读个人介绍与完整职业经历",
+  mainTitle: "关于我",
+  mainSubtitle: "ABOUT ME",
+  mainSummary: "",
+  mainUrl: "/about",
+  postCount: 6,
+  categorySlugs: [] as string[],
 });
 
-const fields: { key: string; label: string; placeholder: string; hint?: string }[] = [
-  { key: "siteName", label: "站名", placeholder: "我的旅程", hint: "页头品牌文字" },
-  { key: "siteTagline", label: "页头标语", placeholder: "A LIFE IN PROGRESS", hint: "页头右侧的小标语" },
-  { key: "avatarUrl", label: "头像 URL", placeholder: "https://…/avatar.png", hint: "留空则不显示头像" },
-  { key: "topline", label: "顶部小标签", placeholder: "PERSONAL JOURNEY / 个人旅程" },
-  { key: "heroTitle", label: "主标题", placeholder: "每一步，都通向新的自己。" },
-  { key: "heroSubtitle", label: "副标题", placeholder: "从城市出发，在校园继续。" },
-  { key: "afterwordTitle", label: "页脚标语", placeholder: "THE JOURNEY CONTINUES" },
-  { key: "afterwordText", label: "页脚文案", placeholder: "在技术、产品与教育之间，持续行走。" },
-  { key: "readingsTitle", label: "阅读区标题", placeholder: "直接阅读个人介绍与完整职业经历" },
+const groups: {
+  title: string;
+  description: string;
+  fields: { key: string; label: string; placeholder: string; hint?: string; type?: string; min?: number; max?: number }[];
+}[] = [
+  {
+    title: "主建筑",
+    description: "街道第一栋加高建筑，默认指向个人介绍页",
+    fields: [
+      { key: "mainTitle", label: "标题", placeholder: "关于我", hint: "建筑招牌文字" },
+      { key: "mainSubtitle", label: "招牌副标题", placeholder: "ABOUT ME" },
+      { key: "mainSummary", label: "卡片简介", placeholder: "点击建筑后卡片里的简介（留空则显示默认文案）" },
+      { key: "mainUrl", label: "跳转链接", placeholder: "/about", hint: "「查看完整介绍」按钮跳转地址" },
+    ],
+  },
+  {
+    title: "街道规模",
+    description: "文章建筑的数量（主建筑与分类建筑另计）",
+    fields: [
+      { key: "postCount", label: "文章建筑数量", placeholder: "6", hint: "4–12 篇最新文章", type: "number", min: 4, max: 12 },
+    ],
+  },
 ];
 
 async function fetchConfig() {
@@ -42,10 +69,39 @@ async function fetchConfig() {
         (form.value as any)[k] = c[k];
       }
     });
+    if (!Array.isArray(form.value.categorySlugs)) {
+      form.value.categorySlugs = [];
+    }
   } catch (e) {
     console.error("Failed to fetch config", e);
   } finally {
     loading.value = false;
+  }
+}
+
+async function fetchCategories() {
+  categoriesLoading.value = true;
+  try {
+    const res = await axios.get(`${apiBase}/categories`);
+    categories.value = res.data || [];
+  } catch (e) {
+    console.error("Failed to fetch categories", e);
+  } finally {
+    categoriesLoading.value = false;
+  }
+}
+
+function toggleCategory(slug: string, checked: boolean) {
+  const list = form.value.categorySlugs;
+  const index = list.indexOf(slug);
+  if (checked && index === -1) {
+    if (list.length >= 4) {
+      Toast.warning("分类建筑最多选择 4 个");
+      return;
+    }
+    list.push(slug);
+  } else if (!checked && index !== -1) {
+    list.splice(index, 1);
   }
 }
 
@@ -70,7 +126,10 @@ function previewPage() {
   window.open("/journey", "_blank");
 }
 
-onMounted(fetchConfig);
+onMounted(() => {
+  fetchConfig();
+  fetchCategories();
+});
 </script>
 
 <template>
@@ -78,7 +137,7 @@ onMounted(fetchConfig);
     <div class="toolbar">
       <div class="toolbar-left">
         <h2 class="title">页面设置</h2>
-        <span class="subtitle">旅程主页（/journey）的全局文案与视觉配置</span>
+        <span class="subtitle">旅程小街（主题 journey 模板内嵌）的街道配置，建筑数据来自博客文章与分类；页面标题与副文案在 Console「页面」中编辑</span>
       </div>
       <div class="toolbar-right">
         <VButton @click="previewPage">预览主页</VButton>
@@ -91,13 +150,44 @@ onMounted(fetchConfig);
     <div class="form-container">
       <div v-if="loading" class="loading-cell">加载中...</div>
       <template v-else>
-        <div v-for="f in fields" :key="f.key" class="form-group">
-          <label>
-            {{ f.label }}
-            <span v-if="f.hint" class="hint">{{ f.hint }}</span>
-          </label>
-          <input v-model="(form as any)[f.key]" type="text" :placeholder="f.placeholder" />
-        </div>
+        <section v-for="group in groups" :key="group.title" class="form-group-section">
+          <h3 class="group-title">{{ group.title }}</h3>
+          <p class="group-description">{{ group.description }}</p>
+          <div v-for="f in group.fields" :key="f.key" class="form-group">
+            <label>
+              {{ f.label }}
+              <span v-if="f.hint" class="hint">{{ f.hint }}</span>
+            </label>
+            <input
+              v-model="(form as any)[f.key]"
+              :type="f.type || 'text'"
+              :placeholder="f.placeholder"
+              :min="f.min"
+              :max="f.max"
+            />
+          </div>
+        </section>
+
+        <section class="form-group-section">
+          <h3 class="group-title">分类建筑</h3>
+          <p class="group-description">
+            勾选作为街道地标建筑的分类（按勾选顺序渲染，最多 4 个）；不勾选时自动使用文章数最多的 2 个分类
+          </p>
+          <div v-if="categoriesLoading" class="loading-cell">分类加载中...</div>
+          <div v-else-if="categories.length === 0" class="loading-cell">博客还没有可用分类</div>
+          <div v-else class="category-list">
+            <label v-for="c in categories" :key="c.slug" class="category-item">
+              <input
+                type="checkbox"
+                :checked="form.categorySlugs.includes(c.slug)"
+                :aria-label="c.displayName"
+                @change="toggleCategory(c.slug, ($event.target as HTMLInputElement).checked)"
+              />
+              <span class="category-name">{{ c.displayName }}</span>
+              <span class="category-count">{{ c.postCount }} 篇</span>
+            </label>
+          </div>
+        </section>
       </template>
     </div>
   </div>
@@ -139,6 +229,25 @@ onMounted(fetchConfig);
   padding: 20px 24px;
   max-width: 720px;
 }
+.form-group-section {
+  padding-top: 8px;
+}
+.form-group-section + .form-group-section {
+  margin-top: 20px;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  padding-top: 20px;
+}
+.group-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: var(--color-text, #111827);
+}
+.group-description {
+  font-size: 12px;
+  color: var(--color-text-secondary, #9ca3af);
+  margin: 0 0 14px;
+}
 .form-group {
   margin-bottom: 16px;
 }
@@ -155,7 +264,8 @@ onMounted(fetchConfig);
   color: var(--color-text-secondary, #9ca3af);
   margin-left: 8px;
 }
-.form-group input {
+.form-group input[type="text"],
+.form-group input[type="number"] {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--color-border, #d1d5db);
@@ -165,9 +275,33 @@ onMounted(fetchConfig);
   background: var(--color-bg, #fff);
   color: var(--color-text, #111827);
 }
+.category-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-text, #374151);
+}
+.category-item:hover {
+  border-color: var(--color-primary, #4ccba0);
+}
+.category-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-secondary, #9ca3af);
+}
 .loading-cell {
   text-align: center;
-  padding: 40px 20px;
+  padding: 24px 16px;
   color: var(--color-text-secondary, #9ca3af);
 }
 </style>
