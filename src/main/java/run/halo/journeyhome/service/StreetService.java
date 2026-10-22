@@ -73,7 +73,7 @@ public class StreetService {
             .collectList()
             .map(posts -> posts.stream()
                 .sorted(Comparator.comparing(this::publishTime,
-                    Comparator.nullsLast(Comparator.naturalOrder())))
+                    Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList());
     }
 

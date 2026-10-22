@@ -356,7 +356,8 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     group.rotation.y = rotation;
     world.add(group);
     for (let i = 0; i < 3; i += 1) box(1.9, 0.09, 0.14, 0, 0.57, -0.2 + i * 0.19, 'wood', group, true);
-    [0.9, 1.12].forEach((y) => box(1.9, 0.16, 0.09, 0, y, -0.32, 'wood', group, true));
+    // 靠背横条略前移，避免与 z=-0.32 的椅腿支撑共面产生 z-fighting 闪烁
+  [0.9, 1.12].forEach((y) => box(1.9, 0.16, 0.09, 0, y, -0.29, 'wood', group, true));
     [-0.72, 0.72].forEach((bx) => {
       box(0.09, 1.12, 0.09, bx, 0.56, -0.32, 'ink', group);
       box(0.09, 0.55, 0.09, bx, 0.27, 0.24, 'ink', group);
@@ -410,14 +411,9 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
   const person = new THREE.Group();
   person.name = 'walker';
   person.position.set(0, 0.1, 2.2);
-  // 内嵌视野较宽，小人放大并加脚下光环，保证在全景中清晰可辨
+  // 内嵌视野较宽，小人放大保证在全景中清晰可辨（脚下不再显示光环）
   person.scale.setScalar(1.8);
   world.add(person);
-  const auraMaterial = new THREE.MeshBasicMaterial({ color: '#a95038', transparent: true, opacity: 0.22, depthWrite: false });
-  materials.add(auraMaterial);
-  const aura = mesh(geometry('aura', () => new THREE.RingGeometry(0.7, 0.86, 40)), auraMaterial, 0, 0.115, 0, person);
-  aura.rotation.x = -Math.PI / 2;
-  aura.castShadow = false;
   const legs = [];
   const arms = [];
   [-1, 1].forEach((side) => {
@@ -786,7 +782,7 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
         jumpVelocity = 0;
       }
     }
-    person.position.y = (sitting ? 0 : 0.1) + jumpHeight;
+    person.position.y = (sitting ? 0.12 : 0.1) + jumpHeight;
     if (sitting) {
       // 坐着时不移动（起身由按键/点击触发）
       renderer.render(scene, camera);
@@ -925,9 +921,11 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     // 身体中心沿椅子面向前移 0.1，离开靠背（靠背在局部 -0.48，人背厚半 0.27，仍有 0.3 间隙）。
     const offsetX = Math.sin(benchGroup.rotation.y) * 0.1;
     const offsetZ = Math.cos(benchGroup.rotation.y) * 0.1;
-    person.position.set(benchGroup.position.x + offsetX, 0, benchGroup.position.z + offsetZ);
+    // 髋高 = 0.12 + 0.58×1.8 = 1.164；腿完全水平前伸时腿底 = 1.164 − 0.095 = 1.070，
+    // 恰好贴在放大座板顶面（≈1.065）上方，公园长椅伸腿坐姿，不穿模
+    person.position.set(benchGroup.position.x + offsetX, 0.12, benchGroup.position.z + offsetZ);
     person.rotation.y = benchGroup.rotation.y;
-    legs.forEach((leg) => { leg.rotation.x = -1.35; });
+    legs.forEach((leg) => { leg.rotation.x = -Math.PI / 2; });
     arms.forEach((arm) => { arm.rotation.x = -0.3; });
     if (typeof opts.onSit === 'function') opts.onSit(true);
   }
