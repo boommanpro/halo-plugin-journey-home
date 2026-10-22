@@ -58,40 +58,23 @@ export function signName(name, maxUnits = 14) {
   return end < name.length ? `${name.slice(0, end)}…` : name;
 }
 
-/** 分类建筑造型轮换：书屋 / 工坊 / 唱片店 / 画室，让每栋房子都不重样 */
+/** 分类房子造型轮换：书屋 / 工坊 / 唱片店 / 画室，让每栋房子都不重样 */
 const CATEGORY_TYPES = ['archive', 'workshop', 'sound', 'studio'];
 
-/** 街道数据 → 场景建筑：主建筑（加高）+ 分类地标（造型轮换）。 */
+/** 街道数据 → 场景建筑：分类房子（造型轮换）。 */
 export function buildStations(street) {
-  const main = street.main;
-  const stations = [{
-    id: 'about',
-    kind: 'about',
-    number: '00',
-    name: main.title,
-    signName: signName(main.title),
-    period: main.subtitle,
-    summary: main.summary,
-    url: main.url,
-    type: 'studio',
-    height: 5.8,
-    accent: 'white',
-  }];
-  street.categories.forEach((category, index) => {
-    stations.push({
-      id: `category-${index}`,
-      kind: 'category',
-      number: `C${index + 1}`,
-      name: category.title,
-      signName: signName(category.title),
-      period: category.subtitle,
-      summary: category.summary,
-      url: category.url,
-      posts: category.posts,
-      type: CATEGORY_TYPES[index % CATEGORY_TYPES.length],
-    });
-  });
-  return stations;
+  return street.categories.map((category, index) => ({
+    id: `category-${index}`,
+    kind: 'category',
+    number: String(index + 1).padStart(2, '0'),
+    name: category.title,
+    signName: signName(category.title),
+    period: category.subtitle,
+    summary: category.summary,
+    url: category.url,
+    posts: category.posts,
+    type: CATEGORY_TYPES[index % CATEGORY_TYPES.length],
+  }));
 }
 
 export function layoutStations(stations) {

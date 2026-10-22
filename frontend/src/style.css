@@ -58,3 +58,8 @@ button:disabled{opacity:.5;cursor:default}
 .station-content.category-posts .place-arrow{font-size:13px}
 @media(max-width:640px){.journey-street{height:72svh;min-height:420px}.intro{top:18px;left:18px;max-width:62%}.journey-street h1{font-size:22px;letter-spacing:2px}.intro p{display:none}.explore{margin-top:12px}.scene-caption{top:14px;right:64px;font-size:8px;gap:8px}.tools{top:56%;right:10px}.tools button{width:34px;height:36px;min-width:34px;min-height:36px}#detail{margin:auto;padding:38px 22px 22px}dialog h2{font-size:24px}.journey-status{width:82%}}
 @media(prefers-reduced-motion:reduce){.journey-street *,.journey-street *:before,.journey-street *:after{animation:none!important;transition:none!important}}
+
+.bubble{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:4;background:var(--paper);border:1px solid var(--line);color:var(--ink);font-size:13px;letter-spacing:1px;padding:10px 20px;border-radius:22px;box-shadow:0 6px 24px #151b2520;animation:bubble-in .35s ease-out both;max-width:78%;text-align:center}
+.bubble[hidden]{display:none}
+@keyframes bubble-in{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.night .bubble{background:#39443d}

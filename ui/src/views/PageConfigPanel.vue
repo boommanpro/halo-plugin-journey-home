@@ -27,10 +27,6 @@ const form = ref({
   afterwordTitle: "THE JOURNEY CONTINUES",
   afterwordText: "在技术、产品与教育之间，持续行走。",
   readingsTitle: "直接阅读个人介绍与完整职业经历",
-  mainTitle: "关于我",
-  mainSubtitle: "ABOUT ME",
-  mainSummary: "",
-  mainUrl: "/about",
   categorySlugs: [] as string[],
 });
 
@@ -39,16 +35,6 @@ const groups: {
   description: string;
   fields: { key: string; label: string; placeholder: string; hint?: string; type?: string; min?: number; max?: number }[];
 }[] = [
-  {
-    title: "主建筑",
-    description: "街道第一栋加高建筑，默认指向个人介绍页",
-    fields: [
-      { key: "mainTitle", label: "标题", placeholder: "关于我", hint: "建筑招牌文字" },
-      { key: "mainSubtitle", label: "招牌副标题", placeholder: "ABOUT ME" },
-      { key: "mainSummary", label: "卡片简介", placeholder: "点击建筑后卡片里的简介（留空则显示默认文案）" },
-      { key: "mainUrl", label: "跳转链接", placeholder: "/about", hint: "「查看完整介绍」按钮跳转地址" },
-    ],
-  },
 ];
 
 async function fetchConfig() {

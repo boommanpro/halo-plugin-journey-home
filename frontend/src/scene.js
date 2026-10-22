@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { layoutStations } from './data.js';
 
-export function createScene(container, { stations = [], onSelect, onReady } = {}) {
+export function createScene(container, { stations = [], onSelect, onReady, onSit } = {}) {
+  const opts = { onSelect, onReady, onSit };
   if (!container || typeof container.appendChild !== 'function') {
     throw new TypeError('createScene 需要一个 DOM 容器');
   }
@@ -346,8 +347,11 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
   }
   [[-10, -6.6, 1.1], [10, -6.5, 0.95], [-10, 6.4, 0.9], [10, 6.6, 1.12], [-10.5, -2.3, 0.72], [10.4, 2.5, 0.78]].forEach((args) => tree(...args));
 
+  const benches = [];
   function bench(x, z, rotation) {
     const group = new THREE.Group();
+    group.name = `bench-${benches.length}`;
+    group.userData.benchIndex = benches.length;
     group.position.set(x, 0.1, z);
     group.rotation.y = rotation;
     world.add(group);
@@ -358,9 +362,29 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
       box(0.09, 0.55, 0.09, bx, 0.27, 0.24, 'ink', group);
     });
     obstacle(x, z, 2.1, 0.9);
+    benches.push(group);
   }
   bench(-4.1, -1.95, 0);
   bench(4.1, 1.95, Math.PI);
+
+  // 房屋门口的交互圈：走到圈内按空格即可开门
+  const doorCircles = new Map();
+  const doorMaterial = new THREE.MeshBasicMaterial({ color: '#a95038', transparent: true, opacity: 0.34, depthWrite: false });
+  materials.add(doorMaterial);
+  const doorDot = new THREE.MeshBasicMaterial({ color: '#a95038', transparent: true, opacity: 0.5, depthWrite: false });
+  materials.add(doorDot);
+  buildings.forEach((group, id) => {
+    const facing = group.rotation.y;
+    const cx = group.position.x + Math.sin(facing) * 0;
+    const cz = group.position.z + Math.cos(facing) * 3.05;
+    const ring = mesh(geometry('door-ring', () => new THREE.RingGeometry(0.58, 0.7, 40)), doorMaterial, cx, 0.115, cz);
+    ring.rotation.x = -Math.PI / 2;
+    ring.castShadow = false;
+    const dot = mesh(geometry('door-dot', () => new THREE.CircleGeometry(0.14, 24)), doorDot, cx, 0.115, cz);
+    dot.rotation.x = -Math.PI / 2;
+    dot.castShadow = false;
+    doorCircles.set(id, new THREE.Vector3(cx, 0, cz));
+  });
   [[-8.9, -1.7], [8.9, 1.7], [-1.8, 7.1], [1.8, -7.1]].forEach(([x, z]) => {
     cylinder(0.22, 0.32, 0.18, x, 0.16, z, 'ink');
     cylinder(0.055, 0.09, 2.7, x, 1.5, z, 'ink');
@@ -525,11 +549,12 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     scene.updateMatrixWorld(true);
     camera.updateMatrixWorld(true);
     raycaster.setFromCamera(pointer, camera);
-    const hit = raycaster.intersectObjects([...buildings.values()], true).find((entry) => entry.object.isMesh);
+    const hit = raycaster.intersectObjects([...buildings.values(), ...benches], true).find((entry) => entry.object.isMesh);
     if (hit) {
       let object = hit.object;
-      while (object && !object.userData.buildingId) object = object.parent;
-      if (object) return { id: object.userData.buildingId };
+      while (object && !object.userData.buildingId && object.userData.benchIndex === undefined) object = object.parent;
+      if (object?.userData.buildingId) return { id: object.userData.buildingId };
+      if (object?.userData.benchIndex !== undefined) return { id: `bench-${object.userData.benchIndex}` };
     }
     const point = raycaster.ray.intersectPlane(ground, new THREE.Vector3());
     return point && walkable(point.x, point.z) ? { point } : null;
@@ -556,7 +581,7 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6) return;
     const hit = pick(event);
     if (hit?.id) {
-      if (typeof onSelect === 'function') onSelect(hit.id);
+      if (typeof opts.onSelect === 'function') opts.onSelect(hit.id);
     } else if (hit?.point) {
       path = findPath(hit.point);
       marker.visible = path.length > 0;
@@ -568,8 +593,9 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
   function keyDown(event) {
     if (!keyCodes.has(event.code) || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
-    if (document.activeElement !== canvas && document.activeElement !== document.body && !container.contains(document.activeElement)) return;
+    // 页面级全局监听：即使焦点在页面其他位置也能操控小人
     event.preventDefault();
+    if (sitting) standUp();
     keys.add(event.code);
     path = [];
     marker.visible = false;
@@ -677,6 +703,11 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
 
   function reset() {
     if (destroyed) return;
+    standUp();
+    approachCallback = null;
+    approachTarget = null;
+    jumpHeight = 0;
+    jumpVelocity = 0;
     viewMode = 'overview';
     followSuspended = false;
     controls.reset();
@@ -720,6 +751,22 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     controls.update();
     movement.set(0, 0, 0);
     let step = 2.6 * dt;
+    if (approachCallback && path.length === 0) settleApproach();
+    // 跳跃竖抛物理
+    if (jumpVelocity !== 0 || jumpHeight > 0) {
+      jumpVelocity -= 13 * dt;
+      jumpHeight += jumpVelocity * dt;
+      if (jumpHeight <= 0) {
+        jumpHeight = 0;
+        jumpVelocity = 0;
+      }
+    }
+    person.position.y = (sitting ? 0.68 : 0.1) + jumpHeight;
+    if (sitting) {
+      // 坐着时不移动（起身由按键/点击触发）
+      renderer.render(scene, camera);
+      return;
+    }
     if (keys.size) {
       camera.getWorldDirection(forward);
       forward.y = 0;
@@ -812,13 +859,111 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     lamps.length = 0;
   }
 
-  const api = { setNight, focus, reset, setView, destroy };
+  const api = { setNight, focus, reset, setView, space, approach, destroy };
   // 开场：小人从街口踱步到街心站定，让访客第一眼就注意到他
   setTimeout(() => {
     if (destroyed) return;
     person.position.set(-6.5, 0.1, 1.6);
     path = [new THREE.Vector3(0, 0.1, 2.2)];
   }, 700);
+
+  let jumpHeight = 0;
+  let jumpVelocity = 0;
+  let sitting = false;
+  let sittingBench = -1;
+  let approachCallback = null;
+  let approachTarget = null;
+
+  function standUp() {
+    if (!sitting) return;
+    sitting = false;
+    sittingBench = -1;
+    person.position.y = 0.1;
+    legs.forEach((leg) => { leg.rotation.x = 0; });
+    arms.forEach((arm) => { arm.rotation.x = 0; });
+    if (typeof opts.onSit === 'function') opts.onSit(false);
+  }
+
+  function sitDown(benchIndex) {
+    const benchGroup = benches[benchIndex];
+    sitting = true;
+    sittingBench = benchIndex;
+    keys.clear();
+    path = [];
+    marker.visible = false;
+    // 坐到椅面上，面朝长椅朝向
+    person.position.set(benchGroup.position.x, 0.68, benchGroup.position.z);
+    person.rotation.y = benchGroup.rotation.y;
+    legs.forEach((leg) => { leg.rotation.x = 1.25; });
+    arms.forEach((arm) => { arm.rotation.x = -0.5; });
+    if (typeof opts.onSit === 'function') opts.onSit(true);
+  }
+
+  /** 让小人走到建筑门口（或长椅）旁，到达后回调。 */
+  function approach(id, onArrive) {
+    if (destroyed) return;
+    if (sitting) standUp();
+    approachTarget = id;
+    approachCallback = onArrive;
+    if (id.startsWith('bench-')) {
+      const benchGroup = benches[Number(id.slice(6))];
+      const ahead = new THREE.Vector3(
+        benchGroup.position.x + Math.sin(benchGroup.rotation.y) * 1.15, 0.1,
+        benchGroup.position.z + Math.cos(benchGroup.rotation.y) * 1.15);
+      path = findPath(ahead);
+    } else if (doorCircles.has(id)) {
+      const door = doorCircles.get(id);
+      path = findPath(door.clone().setY(0.1));
+    } else {
+      path = [];
+    }
+    marker.visible = path.length > 0;
+    if (!path.length) {
+      // 目标不可达或已在场：立即结算
+      settleApproach();
+    }
+  }
+
+  function settleApproach() {
+    const callback = approachCallback;
+    const target = approachTarget;
+    approachCallback = null;
+    approachTarget = null;
+    if (!callback) return;
+    if (target?.startsWith('bench-')) {
+      sitDown(Number(target.slice(6)));
+      callback(target);
+    } else {
+      // 面向房门
+      const building = buildings.get(target);
+      if (building) {
+        const facing = building.rotation.y;
+        person.rotation.y = Math.atan2(
+          building.position.x - person.position.x,
+          building.position.z - person.position.z);
+        void facing;
+      }
+      callback(target);
+    }
+  }
+
+  /** 空格键：坐下时起身；在房门口时返回建筑 id（由宿主打开卡片）；否则起跳。 */
+  function space() {
+    if (destroyed) return null;
+    if (sitting) {
+      standUp();
+      return null;
+    }
+    for (const [id, door] of doorCircles) {
+      if (person.position.distanceTo(new THREE.Vector3(door.x, person.position.y, door.z)) < 1.25) return id;
+    }
+    if (jumpHeight <= 0.001) {
+      jumpVelocity = 4.4;
+      path = [];
+      marker.visible = false;
+    }
+    return null;
+  }
   resize();
   setNight(false);
   controls.saveState();
@@ -827,7 +972,7 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     frame = requestAnimationFrame(animate);
   }
   queueMicrotask(() => {
-    if (!destroyed && typeof onReady === 'function') onReady(api);
+    if (!destroyed && typeof opts.onReady === 'function') opts.onReady(api);
   });
   return api;
 }

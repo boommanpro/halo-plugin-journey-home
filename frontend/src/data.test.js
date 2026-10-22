@@ -29,36 +29,29 @@ test('normalizeStreet 校验并归一化街道数据', () => {
   assert.throws(() => normalizeStreet([]));
 });
 
-test('buildStations 生成主建筑 + 分类地标（造型轮换）', () => {
+test('buildStations 生成分类房子（造型轮换，无主建筑）', () => {
   const streetData = normalizeStreet(street());
   const stations = buildStations(streetData);
-  assert.equal(stations.length, 3);
+  assert.equal(stations.length, 2);
 
-  const main = stations[0];
-  assert.equal(main.id, 'about');
-  assert.equal(main.kind, 'about');
-  assert.equal(main.number, '00');
-  assert.equal(main.height, 5.8);
-
-  const category = stations[1];
+  const category = stations[0];
   assert.equal(category.id, 'category-0');
   assert.equal(category.kind, 'category');
-  assert.equal(category.number, 'C1');
+  assert.equal(category.number, '01');
   assert.equal(category.posts.length, 1);
   assert.equal(category.type, 'archive');
 
-  assert.equal(stations[2].id, 'category-1');
-  assert.equal(stations[2].number, 'C2');
-  assert.equal(stations[2].type, 'workshop');
+  assert.equal(stations[1].id, 'category-1');
+  assert.equal(stations[1].number, '02');
+  assert.equal(stations[1].type, 'workshop');
 });
 
 test('layoutStations 排布两排建筑并保留字段', () => {
   const layout = layoutStations(buildStations(normalizeStreet(street())));
-  assert.equal(layout.buildings.length, 3);
+  assert.equal(layout.buildings.length, 2);
   assert.equal(layout.buildings[0].z, -4.7);
   assert.equal(layout.buildings[1].z, 4.7);
   assert.equal(layout.buildings[1].facing, Math.PI);
-  assert.equal(layout.buildings[0].height, 5.8);
   assert.ok(layout.width > 0);
 });
 

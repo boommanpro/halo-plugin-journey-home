@@ -98,9 +98,7 @@ export default defineConfig({
       input: { street: 'src/embed.js' },
       output: {
         entryFileNames: 'street.js',
-        chunkFileNames: '[name].js',
         assetFileNames: 'street.css',
-        manualChunks: { three: ['three'] },
       },
     },
   },
