@@ -690,17 +690,20 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
       const resume = viewMode === 'follow';
       viewMode = 'follow';
       followSuspended = false;
+      // 跟随（玩家）视角允许更低平的环顾角度，避免与极角钳制打架
+      controls.maxPolarAngle = Math.PI / 2.08;
       if (resume && !transition) return;
       const center = person.position.clone().add(new THREE.Vector3(0, 1.15, 0));
       transition = {
         target: center,
         zoom: 2.1,
-        position: person.position.clone().add(new THREE.Vector3(5.6, 4.2, 6.8)),
+        position: person.position.clone().add(new THREE.Vector3(4.4, 2.9, 5.4)),
       };
       if (reducedMotion.matches) finishTransition();
     } else {
       viewMode = 'overview';
       followSuspended = false;
+      controls.maxPolarAngle = Math.PI / 2.6;
       transition = { target: homeTarget.clone(), zoom: 1.3, position: home.clone() };
       if (reducedMotion.matches) finishTransition();
     }
@@ -715,6 +718,7 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     jumpVelocity = 0;
     viewMode = 'overview';
     followSuspended = false;
+    controls.maxPolarAngle = Math.PI / 2.6;
     controls.reset();
     camera.position.copy(home);
     controls.target.copy(homeTarget);
@@ -782,7 +786,7 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
         jumpVelocity = 0;
       }
     }
-    person.position.y = (sitting ? 0.12 : 0.1) + jumpHeight;
+    person.position.y = (sitting ? 0 : 0.1) + jumpHeight;
     if (sitting) {
       // 坐着时不移动（起身由按键/点击触发）
       renderer.render(scene, camera);
@@ -915,14 +919,15 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     keys.clear();
     path = [];
     marker.visible = false;
-    // 坐姿：臀部（人局部约 0.5，1.8 倍后 0.9）落在放大长椅的座面（约 1.02）上，
-    // 身体沿椅子面向前移一点离开靠背，腿朝椅外（街道方向）前伸
-    const seatY = 0.12;
-    const offsetX = Math.sin(benchGroup.rotation.y) * 0.2;
-    const offsetZ = Math.cos(benchGroup.rotation.y) * 0.2;
-    person.position.set(benchGroup.position.x + offsetX, seatY, benchGroup.position.z + offsetZ);
+    // 坐姿（精确计算）：髋关节在人局部 y=0.58，1.8 倍缩放后髋高 = posY + 1.044，
+    // 放大长椅（1.5x）座面高约 1.02 → posY ≈ 0 时臀部正好落座。
+    // 腿 rotation.x = -1.35 使 (0,-1,0) 转为 (0,-0.22,+0.49)：朝人物面朝方向（椅子面向、街道一侧）前伸。
+    // 身体中心沿椅子面向前移 0.1，离开靠背（靠背在局部 -0.48，人背厚半 0.27，仍有 0.3 间隙）。
+    const offsetX = Math.sin(benchGroup.rotation.y) * 0.1;
+    const offsetZ = Math.cos(benchGroup.rotation.y) * 0.1;
+    person.position.set(benchGroup.position.x + offsetX, 0, benchGroup.position.z + offsetZ);
     person.rotation.y = benchGroup.rotation.y;
-    legs.forEach((leg) => { leg.rotation.x = 1.35; });
+    legs.forEach((leg) => { leg.rotation.x = -1.35; });
     arms.forEach((arm) => { arm.rotation.x = -0.3; });
     if (typeof opts.onSit === 'function') opts.onSit(true);
   }
