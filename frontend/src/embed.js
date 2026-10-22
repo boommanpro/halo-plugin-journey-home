@@ -14,17 +14,18 @@ function mount(app) {
   app.innerHTML = `
     <div id="scene"></div>
     <div class="scene-caption"><span id="count"></span><a id="archives" href="/archives" hidden></a><span id="day-label">日光 · 适合散步</span></div>
-    <div class="tools" aria-label="场景工具"><button id="theme" aria-label="切换夜景" aria-pressed="false">☼</button><button id="reset" aria-label="恢复全景">↺</button><button id="fullscreen" aria-label="切换全屏">⛶</button><button id="help" aria-label="操作指南">?</button></div>
+    <div class="tools" aria-label="场景工具"><button id="theme" aria-label="切换夜景" aria-pressed="false">☼</button><button id="view" aria-label="切换跟随视角" aria-pressed="false">◈</button><button id="reset" aria-label="恢复全景">↺</button><button id="fullscreen" aria-label="切换全屏">⛶</button><button id="help" aria-label="操作指南">?</button></div>
     <div class="loader" role="status"><p>正在打开旅程小街</p></div>
     <div class="journey-status" role="status" aria-live="polite"><span></span><button id="retry" hidden>重新加载</button></div>
     <dialog id="detail" aria-labelledby="detail-title"><button class="dialog-close" aria-label="关闭详情">×</button><div class="eyebrow"></div><h2 id="detail-title"></h2><p class="summary"></p><div class="station-content"></div><div class="detail-actions"><a class="station-link" hidden target="_blank" rel="noopener"></a><button class="continue">继续散步 →</button></div></dialog>
-    <dialog id="guide" aria-labelledby="guide-title"><button class="dialog-close" aria-label="关闭指南">×</button><h2 id="guide-title">漫游指南</h2><p>拖动环顾，滚轮缩放。点击空地行走，方向键或 W A S D 手动行走。点击建筑阅读故事：主建筑是关于我，书屋是分类，其余是最新文章。</p><p>Tab 选择入口，Enter 打开，Esc 返回。右侧按钮切换日夜、恢复全景或进入全屏。</p></dialog>`;
+    <dialog id="guide" aria-labelledby="guide-title"><button class="dialog-close" aria-label="关闭指南">×</button><h2 id="guide-title">漫游指南</h2><p>拖动环顾，滚轮缩放。点击空地行走，方向键或 W A S D 手动行走。点击建筑阅读故事：主建筑是关于我，其余是各分类书屋。◈ 可在俯瞰全景与跟随小人的玩家视角间切换。</p><p>Tab 选择入口，Enter 打开，Esc 返回。右侧按钮切换日夜、恢复全景或进入全屏。</p></dialog>`;
 
   const find = selector => app.querySelector(selector);
   const setText = (selector, value) => { find(selector).textContent = value; };
   let scene;
   let stations = [];
   let night = false;
+  let viewMode = 'overview';
   let disposed = false;
   const detail = find('#detail');
   const guide = find('#guide');
@@ -81,14 +82,28 @@ function mount(app) {
 
   function closeDetail() {
     detail.close();
-    scene?.reset();
+    if (viewMode === 'follow') scene?.setView('follow');
   }
   detail.addEventListener('cancel', event => { event.preventDefault(); closeDetail(); });
   find('#detail .dialog-close').onclick = closeDetail;
   find('.continue').onclick = closeDetail;
   find('#guide .dialog-close').onclick = () => guide.close();
   find('#help').onclick = () => guide.showModal();
-  find('#reset').onclick = () => scene?.reset();
+  find('#reset').onclick = () => {
+    viewMode = 'overview';
+    syncViewButton();
+    scene?.reset();
+  };
+  function syncViewButton() {
+    const button = find('#view');
+    button.setAttribute('aria-pressed', String(viewMode === 'follow'));
+    button.setAttribute('aria-label', viewMode === 'follow' ? '切换俯瞰视角' : '切换跟随视角');
+  }
+  find('#view').onclick = () => {
+    viewMode = viewMode === 'overview' ? 'follow' : 'overview';
+    syncViewButton();
+    scene?.setView(viewMode);
+  };
   find('#theme').onclick = () => {
     night = !night;
     scene?.setNight(night);

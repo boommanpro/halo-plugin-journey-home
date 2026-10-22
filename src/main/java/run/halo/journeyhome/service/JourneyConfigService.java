@@ -51,10 +51,6 @@ public class JourneyConfigService {
 
     private static PageConfigVo toConfigVo(JourneyPageConfig.Spec spec) {
         var defaults = new JourneyPageConfig.Spec();
-        Integer postCount = spec.getPostCount();
-        if (postCount == null || postCount < 4 || postCount > 12) {
-            postCount = defaults.getPostCount();
-        }
         return new PageConfigVo(
             orDefault(spec.getSiteName(), defaults.getSiteName()),
             orDefault(spec.getSiteTagline(), defaults.getSiteTagline()),
@@ -69,8 +65,8 @@ public class JourneyConfigService {
             orDefault(spec.getMainSubtitle(), defaults.getMainSubtitle()),
             orDefault(spec.getMainSummary(), ""),
             orDefault(spec.getMainUrl(), defaults.getMainUrl()),
-            postCount,
-            spec.getCategorySlugs() == null ? List.of() : spec.getCategorySlugs()
+            spec.getCategorySlugs() == null || spec.getCategorySlugs().isEmpty()
+                ? StreetService.DEFAULT_CATEGORY_SLUGS : spec.getCategorySlugs()
         );
     }
 }

@@ -31,7 +31,6 @@ const form = ref({
   mainSubtitle: "ABOUT ME",
   mainSummary: "",
   mainUrl: "/about",
-  postCount: 6,
   categorySlugs: [] as string[],
 });
 
@@ -48,13 +47,6 @@ const groups: {
       { key: "mainSubtitle", label: "招牌副标题", placeholder: "ABOUT ME" },
       { key: "mainSummary", label: "卡片简介", placeholder: "点击建筑后卡片里的简介（留空则显示默认文案）" },
       { key: "mainUrl", label: "跳转链接", placeholder: "/about", hint: "「查看完整介绍」按钮跳转地址" },
-    ],
-  },
-  {
-    title: "街道规模",
-    description: "文章建筑的数量（主建筑与分类建筑另计）",
-    fields: [
-      { key: "postCount", label: "文章建筑数量", placeholder: "6", hint: "4–12 篇最新文章", type: "number", min: 4, max: 12 },
     ],
   },
 ];
@@ -95,8 +87,8 @@ function toggleCategory(slug: string, checked: boolean) {
   const list = form.value.categorySlugs;
   const index = list.indexOf(slug);
   if (checked && index === -1) {
-    if (list.length >= 4) {
-      Toast.warning("分类建筑最多选择 4 个");
+    if (list.length >= 8) {
+      Toast.warning("分类建筑最多选择 8 个");
       return;
     }
     list.push(slug);
@@ -171,7 +163,7 @@ onMounted(() => {
         <section class="form-group-section">
           <h3 class="group-title">分类建筑</h3>
           <p class="group-description">
-            勾选作为街道地标建筑的分类（按勾选顺序渲染，最多 4 个）；不勾选时自动使用文章数最多的 2 个分类
+            勾选作为街道房子的分类（按勾选顺序渲染，最多 8 个）；默认勾选四个核心分类，取消全部则恢复默认
           </p>
           <div v-if="categoriesLoading" class="loading-cell">分类加载中...</div>
           <div v-else-if="categories.length === 0" class="loading-cell">博客还没有可用分类</div>

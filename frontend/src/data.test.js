@@ -14,10 +14,7 @@ const street = () => ({
     },
     { title: '个人常用', subtitle: '69 篇', summary: '', url: '/categories/personal', posts: [] },
   ],
-  posts: [
-    { title: '第一篇', subtitle: '2026-10', summary: '摘要一', url: '/post/1' },
-    { title: '第二篇', subtitle: '2026-09', summary: '', url: '/post/2' },
-  ],
+  posts: [],
   totalPosts: 202,
 });
 
@@ -32,9 +29,10 @@ test('normalizeStreet 校验并归一化街道数据', () => {
   assert.throws(() => normalizeStreet([]));
 });
 
-test('buildStations 生成主建筑 + 分类地标 + 文章建筑', () => {
-  const stations = buildStations(normalizeStreet(street()));
-  assert.equal(stations.length, 5);
+test('buildStations 生成主建筑 + 分类地标（造型轮换）', () => {
+  const streetData = normalizeStreet(street());
+  const stations = buildStations(streetData);
+  assert.equal(stations.length, 3);
 
   const main = stations[0];
   assert.equal(main.id, 'about');
@@ -47,20 +45,16 @@ test('buildStations 生成主建筑 + 分类地标 + 文章建筑', () => {
   assert.equal(category.kind, 'category');
   assert.equal(category.number, 'C1');
   assert.equal(category.posts.length, 1);
+  assert.equal(category.type, 'archive');
 
   assert.equal(stations[2].id, 'category-1');
   assert.equal(stations[2].number, 'C2');
-
-  const post = stations[3];
-  assert.equal(post.id, 'post-0');
-  assert.equal(post.kind, 'post');
-  assert.equal(post.number, '01');
-  assert.equal(post.url, '/post/1');
+  assert.equal(stations[2].type, 'workshop');
 });
 
 test('layoutStations 排布两排建筑并保留字段', () => {
   const layout = layoutStations(buildStations(normalizeStreet(street())));
-  assert.equal(layout.buildings.length, 5);
+  assert.equal(layout.buildings.length, 3);
   assert.equal(layout.buildings[0].z, -4.7);
   assert.equal(layout.buildings[1].z, 4.7);
   assert.equal(layout.buildings[1].facing, Math.PI);

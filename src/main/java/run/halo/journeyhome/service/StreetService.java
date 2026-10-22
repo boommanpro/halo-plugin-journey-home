@@ -26,8 +26,10 @@ import run.halo.journeyhome.dto.StreetVo;
 @RequiredArgsConstructor
 public class StreetService {
 
-    private static final int CATEGORY_LIMIT = 2;
-    private static final int CATEGORY_MAX = 4;
+    /** 未配置分类时的默认街道（用户博客的四个核心分类） */
+    static final List<String> DEFAULT_CATEGORY_SLUGS =
+        List.of("coding-share", "personal", "algorithm-record", "llm");
+    private static final int CATEGORY_MAX = 8;
     private static final int CATEGORY_POST_LIMIT = 5;
     private static final int EXCERPT_MAX_CHARS = 160;
     private static final DateTimeFormatter MONTH_FORMATTER =
@@ -91,30 +93,18 @@ public class StreetService {
                 (first, second) -> first,
                 java.util.LinkedHashMap::new));
 
-        var configuredSlugs = config.categorySlugs() == null ? List.<String>of() : config.categorySlugs();
-        List<Category> selected;
-        if (configuredSlugs.isEmpty()) {
-            selected = availableBySlug.values().stream()
-                .sorted(Comparator.comparingInt(this::visiblePostCount).reversed())
-                .limit(CATEGORY_LIMIT)
-                .toList();
-        } else {
-            selected = configuredSlugs.stream()
-                .map(availableBySlug::get)
-                .filter(Objects::nonNull)
-                .limit(CATEGORY_MAX)
-                .toList();
-        }
-        var categoryBuildings = selected.stream()
+        // 街道构成：主建筑 + 分类地标（分类可后台勾选，默认为四个核心分类；文章建筑已移除）
+        var configuredSlugs = config.categorySlugs() == null || config.categorySlugs().isEmpty()
+            ? DEFAULT_CATEGORY_SLUGS
+            : config.categorySlugs();
+        var categoryBuildings = configuredSlugs.stream()
+            .map(availableBySlug::get)
+            .filter(Objects::nonNull)
+            .limit(CATEGORY_MAX)
             .map(category -> toCategoryBuilding(category, posts))
             .toList();
 
-        var postBuildings = posts.stream()
-            .limit(config.postCount())
-            .map(this::toPostBuilding)
-            .toList();
-
-        return new StreetVo(main, categoryBuildings, postBuildings, posts.size());
+        return new StreetVo(main, categoryBuildings, posts.size());
     }
 
     private boolean isEligibleCategory(Category category) {
@@ -151,14 +141,6 @@ public class StreetService {
             StringUtils.defaultString(category.getSpec().getDescription()),
             category.getStatus().getPermalink(),
             latest);
-    }
-
-    private StreetVo.BuildingVo toPostBuilding(Post post) {
-        return new StreetVo.BuildingVo(
-            post.getSpec().getTitle(),
-            formatDate(publishTime(post)),
-            truncate(StringUtils.defaultString(post.getStatus().getExcerpt())),
-            post.getStatus().getPermalink());
     }
 
     /** 按 Unicode 码点截断，避免拆开代理对。 */

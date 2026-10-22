@@ -16,6 +16,5 @@ public record PageConfigVo(
         String mainSubtitle,
         String mainSummary,
         String mainUrl,
-        Integer postCount,
         List<String> categorySlugs
 ) {}

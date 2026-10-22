@@ -72,7 +72,10 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
   controls.minPolarAngle = Math.PI / 7;
   controls.maxPolarAngle = Math.PI / 2.6;
   controls.minZoom = 0.65;
-  controls.maxZoom = 2.8;
+  controls.maxZoom = 3.2;
+  // 默认放大一档，确保小人一眼可见
+  camera.zoom = 1.3;
+  camera.updateProjectionMatrix();
   controls.update();
 
   function geometry(key, make) {
@@ -433,6 +436,8 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
   let walkTime = 0;
   let path = [];
   let transition = null;
+  let viewMode = 'overview';
+  let followSuspended = false;
   let pointerStart = null;
   const pointers = new Set();
   const raycaster = new THREE.Raycaster();
@@ -582,8 +587,13 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     if (!transition) return;
     controls.enableDamping = false;
     controls.update();
-    camera.position.add(transition.target.clone().sub(controls.target));
-    controls.target.copy(transition.target);
+    if (transition.position) {
+      camera.position.copy(transition.position);
+      controls.target.copy(transition.target);
+    } else {
+      camera.position.add(transition.target.clone().sub(controls.target));
+      controls.target.copy(transition.target);
+    }
     camera.zoom = transition.zoom;
     camera.updateProjectionMatrix();
     controls.update();
@@ -634,6 +644,7 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
 
   function focus(id) {
     if (destroyed || !buildings.has(id)) return false;
+    followSuspended = viewMode === 'follow';
     const target = buildings.get(id).position.clone();
     target.y = 1.2;
     transition = { target, zoom: 1.65 };
@@ -641,12 +652,37 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     return true;
   }
 
+  /** 视角切换：overview 俯瞰全景 / follow 跟随小人的玩家视角。 */
+  function setView(mode) {
+    if (destroyed) return;
+    if (mode === 'follow') {
+      const resume = viewMode === 'follow';
+      viewMode = 'follow';
+      followSuspended = false;
+      if (resume && !transition) return;
+      const center = person.position.clone().add(new THREE.Vector3(0, 1.15, 0));
+      transition = {
+        target: center,
+        zoom: 2.1,
+        position: person.position.clone().add(new THREE.Vector3(5.6, 4.2, 6.8)),
+      };
+      if (reducedMotion.matches) finishTransition();
+    } else {
+      viewMode = 'overview';
+      followSuspended = false;
+      transition = { target: homeTarget.clone(), zoom: 1.3, position: home.clone() };
+      if (reducedMotion.matches) finishTransition();
+    }
+  }
+
   function reset() {
     if (destroyed) return;
+    viewMode = 'overview';
+    followSuspended = false;
     controls.reset();
     camera.position.copy(home);
     controls.target.copy(homeTarget);
-    camera.zoom = 1;
+    camera.zoom = 1.3;
     camera.updateProjectionMatrix();
     controls.update();
     transition = null;
@@ -670,9 +706,16 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
       const delta = transition.target.clone().sub(controls.target).multiplyScalar(factor);
       camera.position.add(delta);
       controls.target.add(delta);
+      if (transition.position) camera.position.lerp(transition.position, factor);
       camera.zoom = THREE.MathUtils.lerp(camera.zoom, transition.zoom, factor);
       camera.updateProjectionMatrix();
       if (controls.target.distanceTo(transition.target) < 0.005 && Math.abs(camera.zoom - transition.zoom) < 0.005) transition = null;
+    }
+    if (viewMode === 'follow' && !followSuspended && !transition) {
+      const want = person.position.clone().add(new THREE.Vector3(0, 1.15, 0));
+      const follow = want.sub(controls.target).multiplyScalar(Math.min(1, dt * 8));
+      controls.target.add(follow);
+      camera.position.add(follow);
     }
     controls.update();
     movement.set(0, 0, 0);
@@ -769,7 +812,7 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
     lamps.length = 0;
   }
 
-  const api = { setNight, focus, reset, destroy };
+  const api = { setNight, focus, reset, setView, destroy };
   // 开场：小人从街口踱步到街心站定，让访客第一眼就注意到他
   setTimeout(() => {
     if (destroyed) return;

@@ -6,14 +6,12 @@ import java.util.List;
  * 3D 街道数据：由博客已发布内容聚合而成。
  *
  * @param main       主建筑（默认「关于我」，跳转链接可配置）
- * @param categories 分类地标建筑（按公开文章数取前 2）
- * @param posts      文章建筑（最新发布文章）
+ * @param categories 分类地标建筑（后台可勾选，默认四个核心分类）
  * @param totalPosts 已发布且公开的文章总数（页脚统计用）
  */
 public record StreetVo(
     BuildingVo main,
     List<CategoryBuildingVo> categories,
-    List<BuildingVo> posts,
     int totalPosts
 ) {
 

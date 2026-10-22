@@ -29,10 +29,7 @@ const mockStreet = {
   },
   categories: [
     {
-      title: '编程分享',
-      subtitle: '86 篇',
-      summary: '编程技术与构建实践',
-      url: '/categories/coding-share',
+      title: '编程分享', subtitle: '87 篇', summary: '编程技术与构建实践', url: '/categories/coding-share',
       posts: [
         { title: 'DGX Spark玩法探索4：本地模型知识汇总', url: '/post/dgx-spark-4', date: '2026-10' },
         { title: '短视频提效工具·剪切流', url: '/post/video-cut-flow', date: '2026-09' },
@@ -42,10 +39,7 @@ const mockStreet = {
       ],
     },
     {
-      title: '个人常用',
-      subtitle: '69 篇',
-      summary: '个人工具与效率清单',
-      url: '/categories/personal',
+      title: '个人常用', subtitle: '71 篇', summary: '个人工具与效率清单', url: '/categories/personal',
       posts: [
         { title: '我的 2026 效率工具箱', url: '/post/my-toolbox-2026', date: '2026-09' },
         { title: '家庭 NAS 折腾记', url: '/post/home-nas', date: '2026-05' },
@@ -54,14 +48,26 @@ const mockStreet = {
         { title: '自动化我的晨间例程', url: '/post/morning-routine', date: '2025-12' },
       ],
     },
-  ],
-  posts: [
-    { title: 'DGX Spark玩法探索4：本地模型知识汇总', subtitle: '2026-10', summary: '汇总 DGX Spark 上可跑的本地模型、显存占用与量化选择，附一套可直接复用的部署脚本。', url: '/post/dgx-spark-4' },
-    { title: '短视频提效工具·剪切流', subtitle: '2026-09', summary: '用 FFmpeg + AI 字幕做一条自动剪辑流水线，把一期视频的后期时间从两小时压到十分钟。', url: '/post/video-cut-flow' },
-    { title: 'AI Coding 日常：夏季总结', subtitle: '2026-08', summary: '整个夏天都在和 AI 结对编程，记录下真正提效的工作流，以及踩过的坑。', url: '/post/ai-coding-daiy-review-summer' },
-    { title: 'AI 工程之外：SOTA 之外的思考', subtitle: '2026-07', summary: '不追 SOTA 之后，工程侧还剩下什么？聊聊稳定性、成本与可维护性。', url: '/post/ai-engineering-outside-sota' },
-    { title: 'Halo 插件开发实录', subtitle: '2026-06', summary: '从零写一个 Halo 2.x 插件：自定义模型、RouterFunction 与 Console UI 扩展。', url: '/post/halo-plugin-dev' },
-    { title: '我的 2026 效率工具箱', subtitle: '2026-05', summary: '盘点今年真正留下来的工具：终端、编辑器、自动化与知识管理。', url: '/post/my-toolbox-2026' },
+    {
+      title: '算法记录', subtitle: '15 篇', summary: '刷题与算法笔记', url: '/categories/algorithm-record',
+      posts: [
+        { title: '滑动窗口套路整理', url: '/post/sliding-window', date: '2026-08' },
+        { title: '图论最短路小结', url: '/post/graph-shortest', date: '2026-04' },
+        { title: '动态规划：从背包说起', url: '/post/dp-knapsack', date: '2026-01' },
+        { title: '每周一题 Vol.12', url: '/post/weekly-12', date: '2025-11' },
+        { title: '二分查找的边界细节', url: '/post/binary-search', date: '2025-09' },
+      ],
+    },
+    {
+      title: '大模型', subtitle: '21 篇', summary: 'LLM 实践与思考', url: '/categories/llm',
+      posts: [
+        { title: '本地部署 Qwen 实测', url: '/post/local-qwen', date: '2026-09' },
+        { title: 'RAG 检索增强踩坑记', url: '/post/rag-notes', date: '2026-06' },
+        { title: '提示词工程的边界', url: '/post/prompt-eng', date: '2026-03' },
+        { title: 'Agent 工具调用实践', url: '/post/agent-tools', date: '2025-12' },
+        { title: '微调还是提示词？', url: '/post/finetune-vs-prompt', date: '2025-10' },
+      ],
+    },
   ],
   totalPosts: 202,
 };

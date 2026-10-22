@@ -41,7 +41,6 @@ export function normalizeStreet(value) {
   return {
     main: normalizeBuilding(value.main),
     categories: Array.isArray(value.categories) ? value.categories.map(normalizeCategory) : [],
-    posts: Array.isArray(value.posts) ? value.posts.map(normalizeBuilding).filter(post => post.url) : [],
     totalPosts: Number(value.totalPosts) || 0,
   };
 }
@@ -59,9 +58,10 @@ export function signName(name, maxUnits = 14) {
   return end < name.length ? `${name.slice(0, end)}…` : name;
 }
 
-const POST_TYPES = ['workshop', 'sound', 'archive', 'studio'];
+/** 分类建筑造型轮换：书屋 / 工坊 / 唱片店 / 画室，让每栋房子都不重样 */
+const CATEGORY_TYPES = ['archive', 'workshop', 'sound', 'studio'];
 
-/** 街道数据 → 场景建筑：主建筑（加高）+ 分类地标 + 最新文章。 */
+/** 街道数据 → 场景建筑：主建筑（加高）+ 分类地标（造型轮换）。 */
 export function buildStations(street) {
   const main = street.main;
   const stations = [{
@@ -88,20 +88,7 @@ export function buildStations(street) {
       summary: category.summary,
       url: category.url,
       posts: category.posts,
-      type: 'archive',
-    });
-  });
-  street.posts.forEach((post, index) => {
-    stations.push({
-      id: `post-${index}`,
-      kind: 'post',
-      number: String(index + 1).padStart(2, '0'),
-      name: post.title,
-      signName: signName(post.title),
-      period: post.subtitle,
-      summary: post.summary,
-      url: post.url,
-      type: POST_TYPES[index % POST_TYPES.length],
+      type: CATEGORY_TYPES[index % CATEGORY_TYPES.length],
     });
   });
   return stations;
