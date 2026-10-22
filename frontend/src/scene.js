@@ -361,29 +361,33 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
       box(0.09, 1.12, 0.09, bx, 0.56, -0.32, 'ink', group);
       box(0.09, 0.55, 0.09, bx, 0.27, 0.24, 'ink', group);
     });
-    obstacle(x, z, 2.1, 0.9);
+    group.scale.setScalar(1.5);
+    obstacle(x, z, 3.1, 1.3);
     benches.push(group);
   }
   bench(-4.1, -1.95, 0);
   bench(4.1, 1.95, Math.PI);
 
-  // 房屋门口的交互圈：走到圈内按空格即可开门
+  // 房屋门口的交互圈：小人走近时才淡入显示（不常驻，保持画面干净）
   const doorCircles = new Map();
-  const doorMaterial = new THREE.MeshBasicMaterial({ color: '#a95038', transparent: true, opacity: 0.34, depthWrite: false });
-  materials.add(doorMaterial);
-  const doorDot = new THREE.MeshBasicMaterial({ color: '#a95038', transparent: true, opacity: 0.5, depthWrite: false });
-  materials.add(doorDot);
+  const doorMarkers = [];
   buildings.forEach((group, id) => {
     const facing = group.rotation.y;
-    const cx = group.position.x + Math.sin(facing) * 0;
+    const cx = group.position.x;
     const cz = group.position.z + Math.cos(facing) * 3.05;
-    const ring = mesh(geometry('door-ring', () => new THREE.RingGeometry(0.58, 0.7, 40)), doorMaterial, cx, 0.115, cz);
+    const pos = new THREE.Vector3(cx, 0, cz);
+    const material = new THREE.MeshBasicMaterial({ color: '#a95038', transparent: true, opacity: 0, depthWrite: false });
+    materials.add(material);
+    const ring = mesh(geometry('door-ring', () => new THREE.RingGeometry(0.58, 0.7, 40)), material, cx, 0.115, cz);
     ring.rotation.x = -Math.PI / 2;
     ring.castShadow = false;
-    const dot = mesh(geometry('door-dot', () => new THREE.CircleGeometry(0.14, 24)), doorDot, cx, 0.115, cz);
+    const dot = mesh(geometry('door-dot', () => new THREE.CircleGeometry(0.14, 24)), material, cx, 0.115, cz);
     dot.rotation.x = -Math.PI / 2;
     dot.castShadow = false;
-    doorCircles.set(id, new THREE.Vector3(cx, 0, cz));
+    ring.visible = false;
+    dot.visible = false;
+    doorCircles.set(id, pos);
+    doorMarkers.push({ id, ring, dot, material, pos });
   });
   [[-8.9, -1.7], [8.9, 1.7], [-1.8, 7.1], [1.8, -7.1]].forEach(([x, z]) => {
     cylinder(0.22, 0.32, 0.18, x, 0.16, z, 'ink');
@@ -583,6 +587,7 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     if (hit?.id) {
       if (typeof opts.onSelect === 'function') opts.onSelect(hit.id);
     } else if (hit?.point) {
+      if (sitting) standUp();
       path = findPath(hit.point);
       marker.visible = path.length > 0;
       marker.position.set(hit.point.x, 0.115, hit.point.z);
@@ -752,6 +757,19 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     movement.set(0, 0, 0);
     let step = 2.6 * dt;
     if (approachCallback && path.length === 0) settleApproach();
+    // 门口交互圈：靠近淡入并轻微呼吸，离开淡出
+    doorMarkers.forEach((marker2) => {
+      const near = !sitting && marker2.pos.distanceTo(
+        new THREE.Vector3(person.position.x, 0, person.position.z)) < 2.6;
+      marker2.material.opacity += ((near ? 0.55 : 0) - marker2.material.opacity) * Math.min(1, dt * 6);
+      const visible = marker2.material.opacity > 0.02;
+      marker2.ring.visible = visible;
+      marker2.dot.visible = visible;
+      if (visible) {
+        const pulse = 1 + Math.sin(time * 0.004) * 0.07;
+        marker2.ring.scale.setScalar(pulse);
+      }
+    });
     // 跳跃竖抛物理
     if (jumpVelocity !== 0 || jumpHeight > 0) {
       jumpVelocity -= 13 * dt;
@@ -761,7 +779,7 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
         jumpVelocity = 0;
       }
     }
-    person.position.y = (sitting ? 0.68 : 0.1) + jumpHeight;
+    person.position.y = (sitting ? 0.42 : 0.1) + jumpHeight;
     if (sitting) {
       // 坐着时不移动（起身由按键/点击触发）
       renderer.render(scene, camera);
@@ -878,7 +896,12 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     if (!sitting) return;
     sitting = false;
     sittingBench = -1;
+    // 从椅子上起身：站到长椅前侧的可走位置
+    const benchGroup = benches[sittingBench] || benches[0];
     person.position.y = 0.1;
+    person.position.x += Math.sin(person.rotation.y) * 1.6;
+    person.position.z += Math.cos(person.rotation.y) * 1.6;
+    void benchGroup;
     legs.forEach((leg) => { leg.rotation.x = 0; });
     arms.forEach((arm) => { arm.rotation.x = 0; });
     if (typeof opts.onSit === 'function') opts.onSit(false);
@@ -891,11 +914,11 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     keys.clear();
     path = [];
     marker.visible = false;
-    // 坐到椅面上，面朝长椅朝向
-    person.position.set(benchGroup.position.x, 0.68, benchGroup.position.z);
+    // 坐到椅面上（长椅已 1.5 倍，座面约 0.95，臀部落在座面），面朝长椅朝向
+    person.position.set(benchGroup.position.x, 0.42, benchGroup.position.z);
     person.rotation.y = benchGroup.rotation.y;
-    legs.forEach((leg) => { leg.rotation.x = 1.25; });
-    arms.forEach((arm) => { arm.rotation.x = -0.5; });
+    legs.forEach((leg) => { leg.rotation.x = 1.15; });
+    arms.forEach((arm) => { arm.rotation.x = -0.35; });
     if (typeof opts.onSit === 'function') opts.onSit(true);
   }
 
