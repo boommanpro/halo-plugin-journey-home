@@ -371,7 +371,14 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
   const person = new THREE.Group();
   person.name = 'walker';
   person.position.set(0, 0.1, 2.2);
+  // 内嵌视野较宽，小人放大并加脚下光环，保证在全景中清晰可辨
+  person.scale.setScalar(1.8);
   world.add(person);
+  const auraMaterial = new THREE.MeshBasicMaterial({ color: '#a95038', transparent: true, opacity: 0.22, depthWrite: false });
+  materials.add(auraMaterial);
+  const aura = mesh(geometry('aura', () => new THREE.RingGeometry(0.7, 0.86, 40)), auraMaterial, 0, 0.115, 0, person);
+  aura.rotation.x = -Math.PI / 2;
+  aura.castShadow = false;
   const legs = [];
   const arms = [];
   [-1, 1].forEach((side) => {
@@ -754,6 +761,12 @@ export function createScene(container, { stations = [], onSelect, onReady } = {}
   }
 
   const api = { setNight, focus, reset, destroy };
+  // 开场：小人从街口踱步到街心站定，让访客第一眼就注意到他
+  setTimeout(() => {
+    if (destroyed) return;
+    person.position.set(-6.5, 0.1, 1.6);
+    path = [new THREE.Vector3(0, 0.1, 2.2)];
+  }, 700);
   resize();
   setNight(false);
   controls.saveState();
