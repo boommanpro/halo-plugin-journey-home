@@ -752,8 +752,11 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
       const follow = want.sub(controls.target).multiplyScalar(Math.min(1, dt * 8));
       controls.target.add(follow);
       camera.position.add(follow);
+      controls.update();
+    } else if (!transition) {
+      controls.update();
     }
-    controls.update();
+    // transition 期间不调用 controls.update()，避免阻尼与过渡动画互相拉扯导致画面抖动丢帧
     movement.set(0, 0, 0);
     let step = 2.6 * dt;
     if (approachCallback && path.length === 0) settleApproach();
@@ -779,7 +782,7 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
         jumpVelocity = 0;
       }
     }
-    person.position.y = (sitting ? 0.42 : 0.1) + jumpHeight;
+    person.position.y = (sitting ? 0.12 : 0.1) + jumpHeight;
     if (sitting) {
       // 坐着时不移动（起身由按键/点击触发）
       renderer.render(scene, camera);
@@ -896,12 +899,10 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     if (!sitting) return;
     sitting = false;
     sittingBench = -1;
-    // 从椅子上起身：站到长椅前侧的可走位置
-    const benchGroup = benches[sittingBench] || benches[0];
+    // 从椅子上起身：向椅子面向方向迈出一步，站到可走位置
     person.position.y = 0.1;
-    person.position.x += Math.sin(person.rotation.y) * 1.6;
-    person.position.z += Math.cos(person.rotation.y) * 1.6;
-    void benchGroup;
+    person.position.x += Math.sin(person.rotation.y) * 2.1;
+    person.position.z += Math.cos(person.rotation.y) * 2.1;
     legs.forEach((leg) => { leg.rotation.x = 0; });
     arms.forEach((arm) => { arm.rotation.x = 0; });
     if (typeof opts.onSit === 'function') opts.onSit(false);
@@ -914,11 +915,15 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     keys.clear();
     path = [];
     marker.visible = false;
-    // 坐到椅面上（长椅已 1.5 倍，座面约 0.95，臀部落在座面），面朝长椅朝向
-    person.position.set(benchGroup.position.x, 0.42, benchGroup.position.z);
+    // 坐姿：臀部（人局部约 0.5，1.8 倍后 0.9）落在放大长椅的座面（约 1.02）上，
+    // 身体沿椅子面向前移一点离开靠背，腿朝椅外（街道方向）前伸
+    const seatY = 0.12;
+    const offsetX = Math.sin(benchGroup.rotation.y) * 0.2;
+    const offsetZ = Math.cos(benchGroup.rotation.y) * 0.2;
+    person.position.set(benchGroup.position.x + offsetX, seatY, benchGroup.position.z + offsetZ);
     person.rotation.y = benchGroup.rotation.y;
-    legs.forEach((leg) => { leg.rotation.x = 1.15; });
-    arms.forEach((arm) => { arm.rotation.x = -0.35; });
+    legs.forEach((leg) => { leg.rotation.x = 1.35; });
+    arms.forEach((arm) => { arm.rotation.x = -0.3; });
     if (typeof opts.onSit === 'function') opts.onSit(true);
   }
 
@@ -931,8 +936,8 @@ export function createScene(container, { stations = [], onSelect, onReady, onSit
     if (id.startsWith('bench-')) {
       const benchGroup = benches[Number(id.slice(6))];
       const ahead = new THREE.Vector3(
-        benchGroup.position.x + Math.sin(benchGroup.rotation.y) * 1.15, 0.1,
-        benchGroup.position.z + Math.cos(benchGroup.rotation.y) * 1.15);
+        benchGroup.position.x + Math.sin(benchGroup.rotation.y) * 1.75, 0.1,
+        benchGroup.position.z + Math.cos(benchGroup.rotation.y) * 1.75);
       path = findPath(ahead);
     } else if (doorCircles.has(id)) {
       const door = doorCircles.get(id);
